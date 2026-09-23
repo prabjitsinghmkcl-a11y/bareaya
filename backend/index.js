@@ -77,7 +77,7 @@ if (process.env.NODE_ENV === 'production') {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "https://checkout.razorpay.com", "https://*.razorpay.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://theskinstory.in", "https://e-fillers.com", "https://*.gstatic.com", "https://encrypted-tbn0.gstatic.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://*.razorpay.com"],
         frameSrc: ["https://checkout.razorpay.com", "https://api.razorpay.com"],
