@@ -121,7 +121,11 @@ const Checkout = () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${authToken}`
       },
-      body: JSON.stringify({ items: payloadItems() })
+      body: JSON.stringify({
+        items: payloadItems(),
+        address: billing,
+        orderNotes: orderNotes.trim()
+      })
     });
     const data = await res.json();
     if (!res.ok || !data.id) throw new Error(data.message || 'Could not create payment order.');

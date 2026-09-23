@@ -102,6 +102,25 @@ app.use(cors({
   credentials: true
 }));
 
+// Razorpay webhook must receive the RAW body (for signature verification) and
+// needs no rate limiter/auth — it is verified by its own HMAC signature.
+// It is mounted before the JSON parser so the raw bytes are preserved.
+const { webhookHandler } = require('./controllers/paymentController');
+app.post(
+  '/api/payment/webhook',
+  express.raw({ type: () => true, limit: '2mb' }),
+  (req, res) => {
+    req.rawBody = req.body;
+    try {
+      req.body = JSON.parse(Buffer.isBuffer(req.body) ? req.body.toString('utf8') : req.body);
+    } catch (err) {
+      console.error('[Razorpay] Webhook body is not valid JSON:', err.message);
+      req.body = {};
+    }
+    webhookHandler(req, res);
+  }
+);
+
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

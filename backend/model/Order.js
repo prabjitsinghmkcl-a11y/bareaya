@@ -40,7 +40,10 @@ const orderSchema = new mongoose.Schema(
     },
     orderNotes: String,
     paymentId: String,
-    razorpayOrderId: String,
+    razorpayOrderId: {
+      type: String,
+      index: true
+    },
     paymentMethod: {
       type: String,
       enum: ['razorpay', 'cod'],

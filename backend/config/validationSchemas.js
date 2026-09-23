@@ -81,6 +81,22 @@ const paymentItemSchema = {
 
 const paymentOrder = {
   items: { type: 'array', required: true, min: 1, max: 50, itemSchema: paymentItemSchema },
+  address: {
+    type: 'object', required: true,
+    fields: {
+      firstName:  { type: 'string', required: true, minLength: 1, maxLength: 100 },
+      lastName:   { type: 'string', required: true, minLength: 1, maxLength: 100 },
+      phone:      { type: 'string', required: false, minLength: 6, maxLength: 20 },
+      email:      { type: 'email',  required: true, maxLength: 120 },
+      street:     { type: 'string', required: true, minLength: 3, maxLength: 300 },
+      apartment:  { type: 'string', required: false, maxLength: 300 },
+      city:       { type: 'string', required: true, minLength: 1, maxLength: 100 },
+      state:      { type: 'string', required: false, maxLength: 100 },
+      postalCode: { type: 'string', required: true, minLength: 3, maxLength: 20, pattern: /^[0-9A-Za-z\s-]+$/ },
+      country:    { type: 'string', required: true, minLength: 2, maxLength: 60 },
+    },
+  },
+  orderNotes: { type: 'string', required: false, maxLength: 500 },
 };
 
 const paymentVerify = {

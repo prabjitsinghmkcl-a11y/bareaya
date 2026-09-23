@@ -1,12 +1,16 @@
 const Order = require('../model/Order');
-const User = require('../model/User');
-const Customer = require('../model/Customer');
-const Product = require('../model/Product');
 const sendEmail = require('../utils/sendEmail');
 const { sendErrorResponse } = require('../utils/apiError');
 const { escapeHtml } = require('../utils/escapeHtml');
 const { computeOrderTotals, OrderTotalError } = require('../utils/orderTotals');
 const { verifyRazorpaySignature, getRazorpayInstance } = require('./paymentController');
+const {
+  decrementStock,
+  restoreStock,
+  syncCustomerName,
+  sendConfirmationEmail,
+  finalizeRazorpayOrder
+} = require('../services/orderWorkflow');
 
 const addOrderItems = async (req, res) => {
   try {
@@ -17,161 +21,118 @@ const addOrderItems = async (req, res) => {
     }
 
     const method = paymentMethod === 'cod' ? 'cod' : 'razorpay';
-    const isRazorpay = method === 'razorpay';
 
-    if (isRazorpay) {
-      // The order can only be recorded once the payment is fully verified
-      // server-side: valid Razorpay signature AND the razorpay order the
-      // payment belongs to was created for exactly this amount.
+    if (method === 'razorpay') {
+      // The order intent was already created when the razorpay order was made
+      // (POST /api/payment/order). Validate the payment here, then flip the
+      // intent to paid — idempotently, so the webhook and the frontend
+      // callback can both fire without double-processing.
       if (!paymentId || !razorpayOrderId || !razorpaySignature) {
         return res.status(400).json({ message: 'Payment details are incomplete.' });
       }
       if (!verifyRazorpaySignature(razorpayOrderId, paymentId, razorpaySignature)) {
         return res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
       }
-    }
 
-    // Recompute names, prices and the total from the product database so
-    // nothing client-supplied can alter the order value — in parallel with
-    // fetching the razorpay order, since both are independent round trips.
-    const settled = await Promise.allSettled([
-      computeOrderTotals(req.body.items),
-      isRazorpay ? getRazorpayInstance().orders.fetch(razorpayOrderId) : Promise.resolve(null)
-    ]);
+      let intent = await Order.findOne({ razorpayOrderId, paymentMethod: 'razorpay', status: 'pending' });
 
-    if (settled[0].status === 'rejected') {
-      if (settled[0].reason instanceof OrderTotalError) {
-        return res.status(400).json({ message: settled[0].reason.message });
+      if (!intent) {
+        // Fallback for orders whose intent was never saved (e.g. created a
+        // moment before this feature shipped): create it from the request now.
+        let settled;
+        try {
+          settled = await computeOrderTotals(req.body.items);
+        } catch (err) {
+          if (err instanceof OrderTotalError) {
+            return res.status(400).json({ message: err.message });
+          }
+          throw err;
+        }
+        intent = await Order.create({
+          userId: req.user._id,
+          items: settled.items,
+          totalAmount: settled.totalAmount,
+          address,
+          orderNotes: orderNotes || undefined,
+          paymentMethod: 'razorpay',
+          razorpayOrderId,
+          status: 'pending'
+        });
       }
-      throw settled[0].reason;
-    }
-    const { items, totalAmount: verifiedTotal } = settled[0].value;
 
-    if (isRazorpay) {
-      if (settled[1].status === 'rejected') {
+      // Confirm the razorpay order exists and matches the stored total.
+      let rOrder;
+      try {
+        rOrder = await getRazorpayInstance().orders.fetch(razorpayOrderId);
+      } catch (fetchError) {
+        console.error('[Razorpay] orders.fetch failed:', fetchError.message);
+      }
+      if (!rOrder) {
         return res.status(400).json({ message: 'Payment verification failed. Order not found.' });
       }
-      if (settled[1].value.amount !== Math.round(verifiedTotal * 100)) {
+      if (rOrder.amount !== Math.round(intent.totalAmount * 100)) {
         return res.status(400).json({ message: 'Payment amount does not match the order total. Please try again.' });
       }
+
+      const submittedTotal = Number(totalAmount);
+      if (!Number.isFinite(submittedTotal) || Math.abs(submittedTotal - intent.totalAmount) > 0.01) {
+        return res.status(400).json({ message: 'Order total does not match. Please refresh the page and try again.' });
+      }
+
+      // A single payment must not be reused to place multiple DIFFERENT
+      // orders — but the same payment finalizing its own intent (e.g. the
+      // webhook already marked it paid) must not be treated as a duplicate.
+      const existingPayment = await Order.findOne({ paymentId });
+      if (existingPayment && existingPayment.razorpayOrderId !== razorpayOrderId) {
+        return res.status(400).json({ message: 'This payment has already been used for an order.' });
+      }
+
+      const result = await finalizeRazorpayOrder({ razorpayOrderId, paymentId });
+      if (!result.order) {
+        return res.status(400).json({ message: 'Order could not be found for this payment. Please contact support.' });
+      }
+      return res.status(result.alreadyFinalized ? 200 : 201).json(result.order);
     }
 
-    const submittedTotal = Number(totalAmount);
-    if (!Number.isFinite(submittedTotal) || Math.abs(submittedTotal - verifiedTotal) > 0.01) {
+    // ---- Cash on Delivery: create the order directly. ----
+    let settled;
+    try {
+      settled = await computeOrderTotals(req.body.items);
+    } catch (err) {
+      if (err instanceof OrderTotalError) {
+        return res.status(400).json({ message: err.message });
+      }
+      throw err;
+    }
+    const verifiedTotal = settled.totalAmount;
+
+    const submittedCODTotals = Number(totalAmount);
+    if (!Number.isFinite(submittedCODTotals) || Math.abs(submittedCODTotals - verifiedTotal) > 0.01) {
       return res.status(400).json({ message: 'Order total does not match. Please refresh the page and try again.' });
     }
 
-    // A single payment must not be reused to place multiple orders.
-    if (paymentId) {
-      const existingPayment = await Order.findOne({ paymentId });
-      if (existingPayment) {
-        return res.status(400).json({ message: 'This payment has already been used for an order.' });
-      }
-    }
-
-    const order = new Order({
+    const codOrder = new Order({
       userId: req.user._id,
-      items,
+      items: settled.items,
       totalAmount: verifiedTotal,
       address,
       orderNotes: orderNotes || '',
-      paymentId: paymentId || undefined,
-      paymentMethod: method,
-      status: method === 'razorpay' ? 'paid' : 'pending'
+      paymentMethod: 'cod',
+      status: 'pending'
     });
-    const createdOrder = await order.save();
 
-    // Atomically decrement stock in parallel. Any failure restores the
-    // quantities that were already deducted so inventory stays consistent.
-    const stockResults = await Promise.all(
-      items.map((item) =>
-        Product.updateOne(
-          { _id: item.productId, stock: { $gte: item.quantity } },
-          { $inc: { stock: -item.quantity } }
-        )
-      )
-    );
-    const failedItems = items.filter((item, index) => stockResults[index].matchedCount !== 1);
+    // Atomically decrement stock. Any failure restores the quantities that
+    // were already deducted so inventory stays consistent.
+    const failedItems = await decrementStock(codOrder.items);
     if (failedItems.length > 0) {
-      await Promise.all(
-        items.map((item, index) =>
-          stockResults[index].matchedCount === 1
-            ? Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } })
-            : Promise.resolve()
-        )
-      );
+      await restoreStock(codOrder.items);
       return res.status(400).json({ message: 'Only limited stock is available for some items in your order.' });
     }
 
-    // Sync the customer's real name from the checkout address so the profile
-    // doesn't keep showing the default "Customer" placeholder.
-    const fullName = [address.firstName, address.lastName].filter(Boolean).join(' ').trim();
-    if (fullName && (!req.user.name || req.user.name === 'Customer')) {
-      try {
-        await User.updateOne({ _id: req.user._id }, { $set: { name: fullName } });
-        if (req.user.phone) {
-          await Customer.updateOne({ phone: req.user.phone }, { $set: { name: fullName } });
-        }
-      } catch (nameError) {
-        console.error('Syncing customer name failed:', nameError.message);
-      }
-    }
+    const createdOrder = await codOrder.save();
 
-    try {
-      const customerName = escapeHtml([address.firstName, address.lastName].filter(Boolean).join(' ').trim() || req.user.name || 'Customer');
-      const customerEmail = address.email || req.user.email;
-
-      const itemsHtml = createdOrder.items
-        .map((item) => `
-          <tr>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(item.name) || 'Product'}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;text-align:right;">₹${Number((item.price || 0) * (item.quantity || 1)).toFixed(2)}</td>
-          </tr>
-        `)
-        .join('');
-
-      const shipTo = escapeHtml(
-        [address.street, address.apartment, address.city, address.state, address.postalCode, address.country]
-          .filter(Boolean)
-          .join(', ')
-      );
-
-      const message = `
-        <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;">
-          <h2 style="color:#1d1d1d;">Your order is placed successfully!</h2>
-          <p>Hello ${customerName},</p>
-          <p>Thank you for shopping with Bareaya. Your order has been confirmed.</p>
-          <p><strong>Order ID:</strong> ${createdOrder._id}</p>
-          <table style="width:100%;border-collapse:collapse;margin:12px 0;">
-            <tr>
-              <th style="padding:8px;text-align:left;background:#f5f5f5;">Item</th>
-              <th style="padding:8px;text-align:center;background:#f5f5f5;">Qty</th>
-              <th style="padding:8px;text-align:right;background:#f5f5f5;">Amount</th>
-            </tr>
-            ${itemsHtml}
-            <tr>
-              <td colspan="2" style="padding:8px;font-weight:bold;">Total (incl. 18% GST)</td>
-              <td style="padding:8px;text-align:right;font-weight:bold;">₹${Number(createdOrder.totalAmount).toFixed(2)}</td>
-            </tr>
-          </table>
-          <p><strong>Payment:</strong> ${createdOrder.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Paid online (Razorpay)'}</p>
-          <p><strong>Deliver to:</strong> ${shipTo}</p>
-          <p>We will notify you once your order is shipped. For any questions, reply to this email or contact us at ${process.env.SMTP_FROM || process.env.EMAIL_USER}.</p>
-          <p>Thank you,<br/>Bareaya Team</p>
-        </div>
-      `;
-
-      if (customerEmail) {
-        sendEmail({
-          email: customerEmail,
-          subject: 'Bareaya - Your order has been placed successfully',
-          html: message
-        }).catch((emailError) => console.error('Order confirmation email failed:', emailError.message));
-      }
-    } catch (emailError) {
-      console.error('Order confirmation email failed:', emailError.message);
-    }
+    await syncCustomerName(createdOrder);
+    await sendConfirmationEmail(createdOrder);
 
     res.status(201).json(createdOrder);
   } catch (error) {
