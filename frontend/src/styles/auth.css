@@ -1,0 +1,140 @@
+.auth-container {
+	align-items: center;
+	display: flex;
+	justify-content: center;
+	min-height: 60vh;
+	padding: 42px 24px 20px;
+}
+
+.auth-form {
+	background: #ffffff;
+	border: 1px solid #e8e5df;
+	border-radius: 16px;
+	box-shadow: 0 12px 28px rgba(29, 29, 29, 0.08);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 36px 32px;
+	width: 100%;
+	max-width: 400px;
+}
+
+.auth-form h2 {
+	font-size: 1.7rem;
+	font-weight: 500;
+	margin: 0 0 6px;
+	text-align: center;
+}
+
+.auth-form input {
+	border: 1px solid #d8d5cd;
+	border-radius: 10px;
+	padding: 12px 14px;
+	width: 100%;
+}
+
+.auth-form input:focus {
+	border-color: #1d1d1d;
+	outline: none;
+}
+
+.auth-form .btn {
+	background: #1d1d1d;
+	border: none;
+	border-radius: 10px;
+	color: #ffffff;
+	cursor: pointer;
+	padding: 13px 14px;
+	width: 100%;
+}
+
+.auth-form .btn:hover {
+	background: #363636;
+}
+
+.auth-form .btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.auth-error {
+	color: #c0392b;
+	font-size: 0.9rem;
+	margin: 0;
+	text-align: center;
+}
+
+.auth-success {
+	color: #1e8449;
+	font-size: 0.9rem;
+	margin: 0;
+	text-align: center;
+}
+
+.auth-info {
+	color: #555555;
+	font-size: 0.9rem;
+	margin: 0;
+	text-align: center;
+}
+
+.auth-form .btn-secondary {
+	background: #ffffff;
+	border: 1px solid #1d1d1d;
+	color: #1d1d1d;
+}
+
+.auth-form .btn-secondary:hover {
+	background: #f2f2f2;
+}
+
+.auth-form .link-btn {
+	background: none;
+	border: none;
+	color: #1d1d1d;
+	cursor: pointer;
+	font-size: 0.9rem;
+	font-weight: bold;
+	padding: 0;
+	width: auto;
+}
+
+.auth-form .link-btn:hover {
+	text-decoration: underline;
+}
+
+.auth-form .link-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.auth-redirect-btn {
+	background: #1d1d1d;
+	border-radius: 10px;
+	color: #ffffff;
+	font-size: 0.95rem;
+	padding: 11px 14px;
+	text-align: center;
+	text-decoration: none;
+}
+
+.auth-redirect-btn:hover {
+	background: #363636;
+}
+
+.auth-form p {
+	color: #666666;
+	font-size: 0.9rem;
+	margin: 4px 0 0;
+	text-align: center;
+}
+
+.auth-form p a {
+	color: #1d1d1d;
+	font-weight: bold;
+}
+
+.auth-row {
+	display: flex;
+	justify-content: space-between;
+}

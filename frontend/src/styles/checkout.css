@@ -1,0 +1,353 @@
+.checkout-empty {
+	margin: 0 auto;
+	max-width: 620px;
+	padding: 90px 24px;
+	text-align: center;
+}
+
+.checkout-empty h1 {
+	font-size: clamp(1.8rem, 4vw, 2.6rem);
+	font-weight: 500;
+	margin: 0 0 12px;
+}
+
+.checkout-empty p {
+	color: #666666;
+	margin: 0 0 24px;
+}
+
+.checkout-auth-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	flex-wrap: wrap;
+}
+
+.checkout-empty .btn {
+	background: #1d1d1d;
+	border: 1px solid #1d1d1d;
+	border-radius: 999px;
+	color: #ffffff;
+	display: inline-block;
+	font-weight: 600;
+	padding: 13px 26px;
+	text-decoration: none;
+	transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.checkout-empty .btn:hover {
+	background: #363636;
+	box-shadow: 0 10px 20px rgba(29, 29, 29, 0.18);
+	transform: translateY(-2px);
+}
+
+.checkout-empty .btn.btn-ghost {
+	background: transparent;
+	border-color: #d8d5cd;
+	color: #1d1d1d;
+}
+
+.checkout-empty .btn.btn-ghost:hover {
+	background: #f0efe9;
+	box-shadow: none;
+}
+
+.checkout-page {
+	margin: 0 auto;
+	max-width: 1100px;
+	padding: 44px 24px 36px;
+}
+
+.checkout-heading {
+	margin-bottom: 30px;
+}
+
+.checkout-eyebrow {
+	color: #7a5c3c;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	margin: 0 0 6px;
+	text-transform: uppercase;
+}
+
+.checkout-heading h1 {
+	font-size: clamp(1.9rem, 4vw, 2.8rem);
+	font-weight: 500;
+	margin: 0;
+}
+
+.checkout-layout {
+	display: grid;
+	grid-template-columns: 1.15fr 0.85fr;
+	gap: 40px;
+	align-items: start;
+}
+
+/* ---------- Billing form ---------- */
+.checkout-form {
+	background: #ffffff;
+	border: 1px solid #e8e5df;
+	border-radius: 16px;
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.checkout-form > h2,
+.checkout-summary > h2 {
+	font-size: 1.35rem;
+	font-weight: 500;
+	margin: 0 0 8px;
+}
+
+.form-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+.form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.form-field label {
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.form-field .required {
+	color: #c0392b;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+	background: #fcfcfa;
+	border: 1px solid #d8d5cd;
+	border-radius: 10px;
+	color: #1d1d1d;
+	padding: 12px 14px;
+	width: 100%;
+	transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.form-field textarea {
+	resize: vertical;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+	background: #ffffff;
+	border-color: #1d1d1d;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(29, 29, 29, 0.08);
+}
+
+.form-field input[readonly] {
+	background: #f1f0ec;
+	color: #555555;
+}
+
+.checkout-error {
+	background: #fef5f3;
+	border: 1px solid #f0cbc4;
+	border-radius: 10px;
+	color: #c0392b;
+	font-size: 0.92rem;
+	margin: 0;
+	padding: 12px 14px;
+}
+
+/* ---------- Order summary ---------- */
+.checkout-summary {
+	background: #ffffff;
+	border: 1px solid #e8e5df;
+	border-radius: 16px;
+	padding: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	position: sticky;
+	top: 84px;
+}
+
+.order-review {
+	border: 1px solid #e8e5df;
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.order-review-head,
+.order-review-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.order-review-head {
+	background: #f7f6f2;
+	color: #555555;
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	padding: 10px 16px;
+	text-transform: uppercase;
+}
+
+.order-review-item {
+	border-bottom: 1px solid #f0efe9;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 16px;
+}
+
+.order-review-product {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	min-width: 0;
+}
+
+.order-review-product img {
+	background: #f5f5f2;
+	border-radius: 8px;
+	flex: 0 0 auto;
+	height: 52px;
+	object-fit: cover;
+	width: 52px;
+}
+
+.order-review-product span {
+	font-size: 0.92rem;
+	overflow-wrap: anywhere;
+}
+
+.order-review-product em {
+	font-style: normal;
+	opacity: 0.6;
+}
+
+.order-review-price {
+	font-size: 0.95rem;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.order-review-row {
+	color: #555555;
+	font-size: 0.95rem;
+	padding: 12px 16px;
+}
+
+.order-review-row + .order-review-row {
+	border-top: 1px solid #f0efe9;
+	padding-top: 12px;
+}
+
+.order-review-total {
+	border-top: 2px solid #e8e5df !important;
+	color: #1d1d1d;
+	font-size: 1.15rem;
+	font-weight: 700;
+	padding-top: 16px !important;
+}
+
+/* ---------- Payment ---------- */
+.checkout-payment-methods {
+	border: 1px solid #e8e5df;
+	border-radius: 12px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.checkout-payment-methods h3 {
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0;
+}
+
+.checkout-payment-option {
+	align-items: flex-start;
+	cursor: pointer;
+	display: flex;
+	gap: 10px;
+	font-size: 0.95rem;
+}
+
+.checkout-payment-option input {
+	margin: 4px 0 0;
+}
+
+.payment-hint {
+	color: #888888;
+	font-size: 0.82rem;
+	margin: -4px 0 0 26px;
+}
+
+.checkout-summary > .btn {
+	background: #1d1d1d;
+	border: 1px solid #1d1d1d;
+	border-radius: 999px;
+	color: #ffffff;
+	cursor: pointer;
+	font-weight: 600;
+	padding: 15px 20px;
+	transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+	width: 100%;
+}
+
+.checkout-summary > .btn:hover {
+	background: #363636;
+	box-shadow: 0 10px 20px rgba(29, 29, 29, 0.18);
+	transform: translateY(-1px);
+}
+
+.checkout-summary > .btn:disabled {
+	box-shadow: none;
+	cursor: not-allowed;
+	opacity: 0.6;
+	transform: none;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 860px) {
+	.checkout-layout {
+		grid-template-columns: 1fr;
+		gap: 24px;
+	}
+
+	.checkout-summary {
+		position: static;
+	}
+}
+
+@media (max-width: 520px) {
+	.checkout-page {
+		padding: 24px 14px 20px;
+	}
+
+	.checkout-form,
+	.checkout-summary {
+		border-radius: 12px;
+		padding: 20px 16px;
+	}
+
+	.form-row {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.order-review-item {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+}

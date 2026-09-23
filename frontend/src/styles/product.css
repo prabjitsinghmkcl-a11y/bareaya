@@ -1,0 +1,39 @@
+.product-detail {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 48px;
+}
+
+.detail-image-container {
+	background: #ffffff;
+	border: 1px solid #e8e5df;
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	padding: 24px;
+}
+
+.detail-image {
+	height: auto;
+	max-width: 100%;
+	object-fit: cover;
+}
+
+.detail-info {
+	display: flex;
+	flex-direction: column;
+}
+
+.detail-price {
+	color: #f97316;
+	font-weight: 700;
+}
+
+@media (max-width: 900px) {
+	.product-detail {
+		grid-template-columns: 1fr;
+		gap: 28px;
+	}
+}

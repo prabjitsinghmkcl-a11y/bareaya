@@ -1,0 +1,31 @@
+{
+  "name": "bareaya",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "Prabjit",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "install-all": "npm install && npm --prefix backend install && npm --prefix frontend install",
+    "build": "npm --prefix frontend run build",
+    "build:admin": "npm --prefix frontend run build:admin",
+    "start": "npm --prefix backend start",
+    "start:prod": "npm --prefix backend run start:prod",
+    "dev": "concurrently -k -n API,WEB,ADMIN -c blue,green,magenta \"npm run start:backend\" \"npm run start:frontend\" \"npm run start:admin\"",
+    "start:backend": "npm --prefix backend run dev",
+    "start:frontend": "npm --prefix frontend run start",
+    "start:admin": "npm --prefix frontend run start:admin",
+    "seed": "npm --prefix backend run seed"
+  },
+  "dependencies": {
+    "@cloudinary/react": "^1.14.4",
+    "@cloudinary/url-gen": "^1.22.0",
+    "concurrently": "^10.0.5",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "razorpay": "^2.9.8"
+  }
+}

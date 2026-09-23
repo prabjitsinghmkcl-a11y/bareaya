@@ -1,0 +1,121 @@
+.product-cart {
+	background: #ffffff;
+	border: 1px solid #e6e6e6;
+	border-radius: 12px;
+	box-shadow: 0 8px 24px rgba(25, 25, 25, 0.08);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-width: 0;
+	overflow: hidden;
+	transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.product-cart:hover {
+	box-shadow: 0 14px 30px rgba(25, 25, 25, 0.14);
+	transform: translateY(-3px);
+}
+
+.product-image {
+	aspect-ratio: 4 / 3;
+	background: #f3f3f1;
+	display: block;
+	height: auto;
+	object-fit: contain;
+	padding: 18px;
+	width: 100%;
+}
+
+.product-cart--no-image .product-info {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.product-cart--no-image .product-price-row {
+	margin-bottom: 18px;
+	margin-top: 6px;
+}
+
+.product-info {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	padding: 18px;
+}
+
+.product-name {
+	color: #1d1d1d;
+	font-family: Georgia, 'Times New Roman', serif;
+	font-size: clamp(1.05rem, 2vw, 1.3rem);
+	font-weight: 600;
+	line-height: 1.25;
+	margin: 0 0 10px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.product-price {
+	color: #555555;
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 0;
+}
+
+.product-price-row {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	margin-bottom: 18px;
+}
+
+.product-details-link {
+	color: #555555;
+	font-size: 0.78rem;
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.product-details-link:hover,
+.product-details-link:focus-visible {
+	color: #1d1d1d;
+}
+
+.product-cart .btn {
+	align-items: center;
+	background: #1d1d1d;
+	border: 1px solid #1d1d1d;
+	border-radius: 6px;
+	box-sizing: border-box;
+	color: #ffffff;
+	display: flex;
+	font-size: 0.92rem;
+	font-weight: 600;
+	justify-content: center;
+	min-height: 44px;
+	padding: 10px 16px;
+	text-decoration: none;
+	transition: background-color 180ms ease, color 180ms ease;
+}
+
+.product-cart .btn:hover,
+.product-cart .btn:focus-visible {
+	background: #ffffff;
+	color: #1d1d1d;
+	outline: 2px solid #1d1d1d;
+	outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+	.product-info {
+		padding: 14px;
+	}
+
+	.product-image {
+		padding: 12px;
+	}
+}

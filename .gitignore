@@ -1,0 +1,12 @@
+.env
+node_modules
+
+# Local Postman / editor artifacts
+.postman/
+postman/
+
+# Build outputs
+frontend/build/
+
+# Uploaded files
+backend/uploads/

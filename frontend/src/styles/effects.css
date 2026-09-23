@@ -1,0 +1,306 @@
+/* ============================================================
+   Bareaya global motion & effects (inspired by Ecomas template)
+   ============================================================ */
+
+:root {
+  --br-cream: #f7f3eb;
+  --br-ink: #263020;
+  --br-olive: #35432c;
+  --br-muted: #686c5b;
+  --br-brown: #8b5e3c;
+}
+
+/* ---------- Preloader ---------- */
+.br-preloader {
+  background: var(--br-cream);
+  inset: 0;
+  overflow: hidden;
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.br-preloader--fading {
+  pointer-events: none;
+}
+
+.br-preloader-inner {
+  position: relative;
+  text-align: center;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 1;
+}
+
+.br-preloader--fading .br-preloader-inner {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.96);
+}
+
+.br-preloader-ring {
+  animation: brSpin 1s linear infinite;
+  border: 3px solid rgba(139, 94, 60, 0.18);
+  border-radius: 50%;
+  border-top-color: var(--br-brown);
+  height: 74px;
+  margin: 0 auto 26px;
+  width: 74px;
+}
+
+@keyframes brSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.br-preloader-text {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  letter-spacing: 0.12em;
+}
+
+.br-preloader-letter {
+  animation: brLetterIn 0.55s ease forwards;
+  animation-delay: var(--d, 0ms);
+  color: var(--br-ink);
+  display: inline-block;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.6rem;
+  opacity: 0;
+}
+
+@keyframes brLetterIn {
+  0% {
+    opacity: 0;
+    transform: translateY(26px) rotateX(50deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.br-preloader p {
+  animation: brPulse 1.2s ease-in-out infinite;
+  color: var(--br-muted);
+  font-family: Arial, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.34em;
+  margin: 16px 0 0;
+  text-transform: uppercase;
+}
+
+@keyframes brPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.br-preloader-curtains {
+  display: flex;
+  inset: 0;
+  position: absolute;
+}
+
+.br-preloader-curtains span {
+  background: #eee8db;
+  flex: 1 1 25%;
+  transform: translateY(0);
+  transition: transform 0.75s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.br-preloader--fading .br-preloader-curtains span:nth-child(1) {
+  transform: translateY(-100%);
+  transition-delay: 0s;
+}
+
+.br-preloader--fading .br-preloader-curtains span:nth-child(2) {
+  transform: translateY(100%);
+  transition-delay: 0.08s;
+}
+
+.br-preloader--fading .br-preloader-curtains span:nth-child(3) {
+  transform: translateY(-100%);
+  transition-delay: 0.16s;
+}
+
+.br-preloader--fading .br-preloader-curtains span:nth-child(4) {
+  transform: translateY(100%);
+  transition-delay: 0.24s;
+}
+
+/* ---------- Back to top ---------- */
+.br-back-top {
+  align-items: center;
+  background: rgba(247, 243, 235, 0.92);
+  border: 1px solid rgba(139, 94, 60, 0.4);
+  border-radius: 50%;
+  bottom: 28px;
+  color: var(--br-ink);
+  display: flex;
+  font-size: 1.05rem;
+  height: 52px;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 28px;
+  transform: translateY(16px);
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  width: 52px;
+  z-index: 900;
+}
+
+.br-back-top--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.br-back-top:hover {
+  background: var(--br-brown);
+  border-color: var(--br-brown);
+  color: #ffffff;
+}
+
+@media (max-width: 560px) {
+  .br-back-top {
+    bottom: 18px;
+    height: 46px;
+    right: 18px;
+    width: 46px;
+  }
+}
+
+/* ---------- Scroll reveal ---------- */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.9s ease var(--reveal-delay, 0ms), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Wrapper used to place ProductCards inside a revealed grid cell
+   (keeps reveal transform separate from the card's own hover transform) */
+.br-product-reveal {
+  min-width: 0;
+}
+
+.br-product-reveal > * {
+  width: 100%;
+}
+
+/* ---------- Entrance animation (used with .br-anim-play parent) ---------- */
+.br-anim {
+  opacity: 0;
+}
+
+.br-anim-play .br-anim {
+  animation: brFadeUp 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes brFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Gentle float (hero image etc.) ---------- */
+@keyframes brFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.br-float {
+  animation: brFloat 6.5s ease-in-out infinite;
+}
+
+/* ---------- Marquee ---------- */
+.br-marquee {
+  border-bottom: 1px solid rgba(53, 67, 44, 0.14);
+  border-top: 1px solid rgba(53, 67, 44, 0.14);
+  overflow: hidden;
+  padding: 20px 0;
+  white-space: nowrap;
+}
+
+.br-marquee-track {
+  animation: brMarquee 26s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+.br-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.br-marquee-group {
+  align-items: center;
+  display: flex;
+}
+
+.br-marquee-group span {
+  align-items: center;
+  color: var(--br-ink);
+  display: flex;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.4rem;
+  font-style: italic;
+  gap: 4rem;
+  padding-right: 4rem;
+}
+
+.br-marquee-group span i {
+  color: var(--br-brown);
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+@keyframes brMarquee {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* ---------- Respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .br-preloader-ring,
+  .br-float,
+  .br-marquee-track,
+  .br-preloader-letter {
+    animation: none;
+  }
+
+  .br-preloader-letter {
+    opacity: 1;
+  }
+
+  [data-reveal],
+  .br-anim {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
