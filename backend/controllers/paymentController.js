@@ -11,6 +11,11 @@ const getRazorpayInstance = () =>
 
 const createOrder = async (req, res) => {
   try {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('[Razorpay] RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not configured on the server.');
+      return res.status(500).json({ message: 'Payment is not configured on the server. Please contact support.' });
+    }
+
     // The amount is computed server-side from the product database. Clients
     // only submit product ids + quantities — never a price or total.
     let verified;
@@ -29,7 +34,14 @@ const createOrder = async (req, res) => {
       notes: { items: verified.items.length }
     };
 
-    const order = await getRazorpayInstance().orders.create(options);
+    let order;
+    try {
+      order = await getRazorpayInstance().orders.create(options);
+    } catch (razorpayError) {
+      const code = razorpayError && razorpayError.error && razorpayError.error.code;
+      console.error('[Razorpay] order.create failed. code=' + (code || 'n/a'), razorpayError.message);
+      throw razorpayError;
+    }
     if (!order) return res.status(500).json({ message: 'Some error occurred' });
     res.json({ ...order, key_id: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
