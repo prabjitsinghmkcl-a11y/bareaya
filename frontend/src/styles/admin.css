@@ -76,7 +76,7 @@
 	border-radius: 8px;
 	color: #ffffff;
 	cursor: pointer;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: 1rem;
 	font-weight: 600;
 	padding: 12px 22px;
@@ -267,7 +267,7 @@
 .admin-order-item-qty,
 .admin-order-item-price,
 .admin-order-total span:last-child {
-	font-family: Arial, sans-serif;
+	font-family: var(--font-body);
 }
 
 .admin-order-status {
@@ -291,7 +291,7 @@
 
 .admin-order-block h4 {
 	color: #f97316;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: 0.95rem;
 	margin: 0 0 10px;
 	text-transform: uppercase;
@@ -301,6 +301,17 @@
 .admin-order-block p {
 	color: #ffffff;
 	margin: 0 0 6px;
+}
+
+.admin-phone-link {
+	color: #f97316;
+	font-weight: 600;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.admin-phone-link:hover {
+	text-decoration: underline;
 }
 
 .admin-order-items {
@@ -374,7 +385,7 @@
 
 .admin-dashboard h2 {
 	color: #1d1d1d;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: clamp(2rem, 4vw, 3.3rem);
 	font-weight: 500;
 	line-height: 1;
@@ -412,7 +423,7 @@
 
 .admin-stat-card h4 {
 	color: #c4c5ca !important;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: 1rem !important;
 	font-weight: 500;
 	margin: 0;
@@ -434,7 +445,7 @@
 
 .admin-dashboard-controls h3 {
 	color: #f97316 !important;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: 1.35rem;
 	margin: 0 0 22px !important;
 }
@@ -445,7 +456,7 @@
 	border-radius: 8px;
 	color: #ffffff;
 	cursor: pointer;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-heading);
 	font-size: 0.95rem;
 	padding: 11px 16px;
 	transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;

@@ -34,7 +34,15 @@ const addOrderItems = async (req, res) => {
         return res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
       }
 
-      let intent = await Order.findOne({ razorpayOrderId, paymentMethod: 'razorpay', status: 'pending' });
+      // Scope the intent lookup to the authenticated user as well as the id. The
+      // signature check above already binds razorpayOrderId to our secret, but
+      // every other order query here is ownership-scoped, so this one must be too.
+      let intent = await Order.findOne({
+        razorpayOrderId,
+        userId: req.user._id,
+        paymentMethod: 'razorpay',
+        status: 'pending'
+      });
 
       if (!intent) {
         // Fallback for orders whose intent was never saved (e.g. created a
@@ -121,14 +129,18 @@ const addOrderItems = async (req, res) => {
       status: 'pending'
     });
 
-    // Atomically decrement stock. Any failure restores the quantities that
-    // were already deducted so inventory stays consistent.
-    const failedItems = await decrementStock(codOrder.items);
-    if (failedItems.length > 0) {
-      await restoreStock(codOrder.items);
+    // Atomically decrement stock. On any shortfall, give back ONLY the lines
+    // that were actually deducted — restoring the whole cart would add back
+    // quantities that were never subtracted and manufacture inventory.
+    const { decremented, failed } = await decrementStock(codOrder.items);
+    if (failed.length > 0) {
+      await restoreStock(decremented);
       return res.status(400).json({ message: 'Only limited stock is available for some items in your order.' });
     }
 
+    // Inventory is now reserved for this order. Record that fact on the order so a
+    // later cancellation knows it is allowed to give the stock back exactly once.
+    codOrder.stockDeducted = true;
     const createdOrder = await codOrder.save();
 
     await syncCustomerName(createdOrder);
@@ -151,23 +163,64 @@ const myorders = async (req, res) => {
 
 const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({}).populate('userId', 'name');
+    // The admin needs the customer's contact details, so pull the account
+    // phone/email alongside the name as a fallback for the address block.
+    const orders = await Order.find({}).populate('userId', 'name phone email');
     res.json(orders);
   } catch (error) {
     sendErrorResponse(res, error);
   }
 };
 
+// Which status changes an admin is allowed to make. Anything not listed is
+// rejected, so a cancelled order can never be silently un-cancelled (which
+// would ship goods whose stock had already been returned) and a delivered
+// order can never be sent back to pending.
+const ALLOWED_STATUS_TRANSITIONS = {
+  pending: ['paid', 'cancelled'],
+  paid: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: []
+};
+
 const updateOrderStatus = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (order) {
-      order.status = req.body.status || order.status;
-      const updatedOrder = await order.save();
-      res.json(updatedOrder);
-    } else {
-      res.status(404).json({ message: 'Order not found' });
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
     }
+
+    const nextStatus = req.body.status;
+    if (!nextStatus || nextStatus === order.status) {
+      return res.status(400).json({ message: `Order is already ${order.status}.` });
+    }
+
+    const allowed = ALLOWED_STATUS_TRANSITIONS[order.status] || [];
+    if (!allowed.includes(nextStatus)) {
+      return res.status(400).json({
+        message: `Cannot change an order from ${order.status} to ${nextStatus}.`
+      });
+    }
+
+    order.status = nextStatus;
+    const updatedOrder = await order.save();
+
+    // Cancelling via the admin panel must release the reserved inventory, and
+    // must do so exactly once. The atomic `stockDeducted: true` guard means two
+    // concurrent cancellations cannot both return the same units.
+    if (nextStatus === 'cancelled' && updatedOrder.stockDeducted) {
+      const released = await Order.findOneAndUpdate(
+        { _id: updatedOrder._id, stockDeducted: true },
+        { $set: { stockDeducted: false } },
+        { new: true }
+      );
+      if (released) {
+        await restoreStock(updatedOrder.items);
+      }
+    }
+
+    res.json(updatedOrder);
   } catch (error) {
     sendErrorResponse(res, error);
   }
@@ -185,8 +238,31 @@ const cancelOrder = async (req, res) => {
     if (!['pending', 'paid'].includes(order.status)) {
       return res.status(400).json({ message: `Order cannot be cancelled once it is ${order.status}` });
     }
-    order.status = 'cancelled';
-    await order.save();
+
+    // Claim the cancellation atomically. If a second request arrives while this
+    // one is in flight it matches nothing and returns 409, so stock can only
+    // ever be returned once.
+    const cancelled = await Order.findOneAndUpdate(
+      { _id: order._id, status: order.status },
+      { $set: { status: 'cancelled' } },
+      { new: true }
+    );
+    if (!cancelled) {
+      return res.status(409).json({ message: 'This order was already cancelled.' });
+    }
+
+    // Return the reserved inventory — but only if it was actually deducted, and
+    // clear the flag in the same atomic write so a repeat cancel is a no-op.
+    if (order.stockDeducted) {
+      const released = await Order.findOneAndUpdate(
+        { _id: order._id, stockDeducted: true },
+        { $set: { stockDeducted: false } },
+        { new: true }
+      );
+      if (released) {
+        await restoreStock(order.items);
+      }
+    }
 
     try {
       const message = `
@@ -208,7 +284,7 @@ const cancelOrder = async (req, res) => {
       console.error('Cancellation email failed:', emailError.message);
     }
 
-    res.json(order);
+    res.json(cancelled);
   } catch (error) {
     sendErrorResponse(res, error);
   }

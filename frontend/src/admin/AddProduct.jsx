@@ -2,10 +2,11 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft } from 'lucide-react';
+import { resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
 
 const AddProduct = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(() => {
     try {
@@ -19,6 +20,7 @@ const AddProduct = () => {
     description: '',
     price: '',
     category: '',
+    tag: '',
     stock: ''
   });
   const [image, setImage] = useState(null);
@@ -34,6 +36,14 @@ const AddProduct = () => {
     if (!userInfo || userInfo.role !== 'admin') navigate('/admin/login');
   }, [userInfo, navigate]);
 
+  // Blob URLs created for the preview were never released, so every selected
+  // image stayed pinned in memory for the lifetime of the page.
+  useEffect(() => {
+    return () => {
+      if (preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   if (!userInfo || userInfo.role !== 'admin') return null;
 
   const handleChange = (e) => {
@@ -44,7 +54,10 @@ const AddProduct = () => {
   const handleFile = (e) => {
     const file = e.target.files[0];
     setImage(file || null);
-    setPreview(file ? URL.createObjectURL(file) : '');
+    setPreview((prev) => {
+      if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : '';
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -65,13 +78,18 @@ const AddProduct = () => {
         headers: { Authorization: `Bearer ${userInfo.token}` },
         body: fd
       });
+      if (res.status === 401) {
+        logout();
+        navigate('/admin/login', { replace: true });
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Could not add product.');
       }
       navigate('/admin/products');
     } catch (err) {
-      setError(err.message);
+      setError(resolveAdminError(err, logout, navigate) || 'Could not add product.');
     } finally {
       setLoading(false);
     }
@@ -104,6 +122,15 @@ const AddProduct = () => {
           <input type="text" name="category" value={form.category} onChange={handleChange} placeholder="e.g. Skincare, Clothing" required />
         </label>
         <label>
+          Home Filter Tag
+          <select name="tag" value={form.tag} onChange={handleChange}>
+            <option value="">None</option>
+            <option value="Hydration">Hydration</option>
+            <option value="Clarity">Clarity</option>
+            <option value="Protection">Protection</option>
+          </select>
+        </label>
+        <label>
           Stock
           <input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required />
         </label>
@@ -112,7 +139,7 @@ const AddProduct = () => {
           {preview && (
             <img
               src={preview}
-              alt="Selected product image"
+              alt="Selected file preview"
               className="admin-image-preview"
             />
           )}

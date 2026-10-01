@@ -18,6 +18,7 @@ const productCreate = {
   description: { type: 'string', required: true,  minLength: 1,  maxLength: 5000 },
   price:       { type: 'number', required: true,  min: 0, max: 10_000_000 },
   category:    { type: 'string', required: true,  minLength: 1,  maxLength: 80 },
+  tag:         { type: 'string', required: false, maxLength: 60 },
   stock:       { type: 'number', required: true,  integer: true, min: 0, max: 1_000_000 },
 };
 
@@ -27,6 +28,7 @@ const productUpdate = {
   description: { type: 'string', required: false, minLength: 1, maxLength: 5000 },
   price:       { type: 'number', required: false, min: 0, max: 10_000_000 },
   category:    { type: 'string', required: false, minLength: 1, maxLength: 80 },
+  tag:         { type: 'string', required: false, maxLength: 60 },
   stock:       { type: 'number', required: false, integer: true, min: 0, max: 1_000_000 },
 };
 

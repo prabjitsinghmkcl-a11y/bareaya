@@ -113,7 +113,7 @@
 	border-radius: 999px;
 	color: #f8f8f8;
 	display: flex;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-body);
 	font-size: clamp(0.9rem, 1.35vw, 1.2rem);
 	padding: 9px 10px;
 	text-decoration: none;
@@ -155,7 +155,7 @@
 	border-radius: 999px;
 	color: #1d1d1d;
 	display: flex;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-body);
 	font-size: clamp(0.95rem, 1.8vw, 1.35rem);
 	min-height: 70px;
 	padding: 0 clamp(22px, 2.5vw, 30px);
@@ -211,7 +211,7 @@
 	background: transparent;
 	border: 0;
 	color: #ffffff;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-body);
 	font-size: 0.96rem;
 	height: 38px;
 	min-width: 0;
@@ -234,7 +234,7 @@
 	border-radius: 999px;
 	color: #1d1d1d;
 	cursor: pointer;
-	font-family: Georgia, 'Times New Roman', serif;
+	font-family: var(--font-body);
 	font-size: 0.88rem;
 	font-weight: 600;
 	height: 38px;
@@ -366,7 +366,7 @@
 	background: #050505;
 	color: #ffffff;
 	display: flex;
-	font-family: Arial, sans-serif;
+	font-family: var(--font-body);
 	font-size: 0.78rem;
 	gap: 12px;
 	justify-content: center;
@@ -500,14 +500,13 @@
 	align-items: center;
 	display: flex;
 	gap: 0;
-	justify-content: center;
-	left: 50%;
+	justify-content: flex-start;
 	max-width: none;
 	padding: 0;
-	position: absolute;
-	top: 50%;
-	transform: translate(-50%, -50%);
-	width: min(46vw, 560px);
+	padding-left: clamp(14px, 2.4vw, 38px);
+	position: static;
+	transform: none;
+	width: 100%;
 }
 
 .navbar-menu .navbar-search {
@@ -524,7 +523,7 @@
 	border: 0;
 	border-radius: 0;
 	color: #111111;
-	font-family: Arial, sans-serif;
+	font-family: var(--font-body);
 	font-size: 1rem;
 	padding: 4px 0;
 	text-transform: uppercase;
@@ -575,9 +574,12 @@
 		width: 22px;
 	}
 
-	.navbar-actions a:nth-child(2),
-	.navbar-actions button:nth-child(3) {
-		display: none;
+	/* The account link must stay reachable on small screens — it used to be
+	   hidden here by an nth-child rule, which left phones with no way to log in
+	   or reach the profile at all. */
+	.navbar-profile {
+		display: inline-flex;
+		align-items: center;
 	}
 
 	.navbar-toggle {
@@ -600,6 +602,8 @@
 		display: none;
 		flex-direction: column;
 		gap: 8px;
+		grid-column: 1 / -1;
+		margin: 8px -16px 0;
 		padding: 18px 24px 24px;
 		position: static;
 		transform: none;

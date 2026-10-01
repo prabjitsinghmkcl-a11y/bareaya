@@ -28,7 +28,7 @@ const getProductById = async (req, res) => {
 
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, category, stock } = req.body;
+    const { name, description, price, category, stock, tag } = req.body;
     let imageUrl = '';
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, { folder: 'bareaya/products' });
@@ -36,7 +36,7 @@ const createProduct = async (req, res) => {
       fs.unlink(req.file.path, () => {});
     }
     const product = new Product({
-      name, description, price, category, stock, imageUrl
+      name, description, price, category, stock, tag: tag || '', imageUrl
     });
     const createdProduct = await product.save();
     res.status(201).json(createdProduct);
@@ -47,7 +47,7 @@ const createProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    const { name, description, price, category, stock } = req.body;
+    const { name, description, price, category, stock, tag } = req.body;
     const product = await Product.findById(req.params.id);
     if (product) {
       product.name = name || product.name;
@@ -55,6 +55,7 @@ const updateProduct = async (req, res) => {
       product.price = price ?? product.price;
       product.category = category || product.category;
       product.stock = stock ?? product.stock;
+      if (tag !== undefined) product.tag = tag;
 
       if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path, { folder: 'bareaya/products' });

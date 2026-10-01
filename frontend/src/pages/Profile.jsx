@@ -10,12 +10,14 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState('');
   const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
       return;
     }
+    setError('');
     const fetchMyOrders = async () => {
       try {
         const res = await fetch('/api/orders/myorders', {
@@ -32,14 +34,18 @@ const Profile = () => {
           }
           setOrders([]);
         }
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        // A network or server failure must NOT be reported as "you have no
+        // orders" — that state is indistinguishable from a genuinely empty
+        // order history and hides a real problem from the customer.
+        console.error(err);
+        setError('Could not load your orders. Please check your connection and try again.');
       } finally {
         setLoading(false);
       }
     };
     fetchMyOrders();
-  }, [user, navigate]);
+  }, [user, navigate, logout, reloadKey]);
 
   const handleLogout = () => {
     logout();
@@ -94,6 +100,13 @@ const Profile = () => {
       {error && <p className="profile-error" data-reveal>{error}</p>}
       {loading ? (
         <p className="profile-muted" data-reveal>Fetching your orders...</p>
+      ) : error ? (
+        <div className="profile-empty" data-reveal>
+          <p>Your order history could not be loaded.</p>
+          <button className="profile-action" onClick={() => setReloadKey((k) => k + 1)}>
+            Retry <span aria-hidden="true">→</span>
+          </button>
+        </div>
       ) : orders.length === 0 ? (
         <div className="profile-empty" data-reveal>
           <p className="profile-empty-icon">+</p>

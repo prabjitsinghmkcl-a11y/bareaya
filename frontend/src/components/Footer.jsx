@@ -33,7 +33,7 @@ const Footer = () => {
                     <h4>Customer Support</h4>
                     <div className="support-details">
                         <p><strong>Call:</strong> <a href="tel:+919266145378">+91 92661 45378</a></p>
-                        <p><strong>Email:</strong> <a href="mailto:ea.chandni@gmail.com">ea.chandni@gmail.com</a></p>
+                        <p><strong>Email:</strong> <a href="mailto:care@bareaya.in">care@bareaya.in</a></p>
                     </div>
                 </div>
                 <div className="footer-section">

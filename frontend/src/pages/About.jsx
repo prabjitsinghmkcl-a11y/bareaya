@@ -1,7 +1,14 @@
 import React from "react";
 import { Leaf, Droplet, Sparkles, Truck, Wallet, PackageSearch, MessageCircleQuestion } from "lucide-react";
+import { optimised } from "../utils/cloudinary";
 import "../styles/about.css";
 
+// This page is styled entirely by about.css, which targets
+// `.about-page > section:nth-of-type(n)`. Two consequences for this file:
+//   1. Element order and nesting must not change, or the CSS stops matching.
+//   2. Presentation belongs in about.css, not in utility classes or inline
+//      styles here. The heading font/weight overrides that used to sit inline
+//      were already being beaten by `!important` in about.css.
 const InstagramIcon = ({ size = 24, ...props }) => (
   <svg
     width={size}
@@ -58,20 +65,16 @@ const footerHighlights = [
 
 export default function AboutPage() {
   return (
-    <div className="about-page bg-[#FAF6EF] text-[#20291B]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+    <div className="about-page" style={{ fontFamily: "'Manrope', sans-serif" }}>
       <style>{FONT_IMPORT}</style>
 
       {/* Hero */}
-      <section className="px-6 pt-20 pb-16 sm:pt-28 sm:pb-24 text-center max-w-3xl mx-auto">
-        <p className="text-sm tracking-wide text-[#7A6A4E] mb-3" data-reveal>About Bareaya</p>
-        <h1
-          className="text-4xl sm:text-6xl leading-[1.1] mb-5"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, '--reveal-delay': '90ms' }}
-          data-reveal
-        >
+      <section>
+        <p data-reveal>About Bareaya</p>
+        <h1 data-reveal style={{ '--reveal-delay': '90ms' }}>
           Pure. Purposeful. Rooted.
         </h1>
-        <p className="text-[#4B5240] text-base sm:text-lg leading-relaxed" style={{ '--reveal-delay': '180ms' }} data-reveal>
+        <p style={{ '--reveal-delay': '180ms' }} data-reveal>
           A skincare line built at the meeting point of Canadian science and
           Indian tradition — gentle enough for every skin, honest enough to
           mean something.
@@ -79,35 +82,35 @@ export default function AboutPage() {
       </section>
 
       {/* Founder */}
-      <section className="px-6 pb-20 sm:pb-28">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-[0.85fr_1fr] gap-10 sm:gap-16 items-center">
-          <div className="relative" data-reveal>
-            <div className="absolute -inset-3 border border-[#C68A3D]/30 rounded-sm hidden sm:block" />
+      <section>
+        <div>
+          <div data-reveal>
+            <div />
             <img
-              src="https://res.cloudinary.com/aao6ldeb/image/upload/v1789571545/bareaya/site/founder-image.jpg"
+              src={optimised("https://res.cloudinary.com/aao6ldeb/image/upload/v1789571545/bareaya/site/founder-image.jpg", "founder")}
               alt="Chandni Anand, Founder of Bareaya"
-              className="w-full aspect-[4/5] object-cover rounded-sm relative"
+              loading="lazy"
+              decoding="async"
+              width={900}
+              height={1125}
             />
           </div>
           <div style={{ '--reveal-delay': '150ms' }} data-reveal>
-            <p className="text-sm tracking-wide text-[#7A6A4E] mb-3">From the Founder</p>
-            <p
-              className="text-2xl sm:text-3xl leading-snug mb-6 text-[#2A331F]"
-              style={{ fontFamily: "'Cormorant Garamond', serif", fontStyle: "italic" }}
-            >
+            <p>From the Founder</p>
+            <p>
               Bareaya's philosophy is to gently nourish, heal, and enhance the
               skin's natural glow — without causing harm.
             </p>
-            <p className="text-[#4B5240] leading-relaxed mb-8">
+            <p>
               Inspired by clean beauty and nature-led care, Bareaya turns
               everyday skincare into something fresh, healthy, and honestly
               beautiful — suitable for every skin type it meets.
             </p>
-            <div className="flex items-center gap-4">
-              <div className="h-px w-10 bg-[#2F3B28]" />
+            <div>
+              <div />
               <div>
-                <p className="text-sm font-semibold tracking-wide">CHANDNI ANAND</p>
-                <p className="text-sm text-[#7A6A4E]">Founder</p>
+                <p>CHANDNI ANAND</p>
+                <p>Founder</p>
               </div>
             </div>
           </div>
@@ -115,17 +118,13 @@ export default function AboutPage() {
       </section>
 
       {/* Story */}
-      <section className="bg-[#2F3B28] text-[#F3EFE3] px-6 py-20 sm:py-28">
-        <div className="max-w-3xl mx-auto">
-          <p className="text-sm tracking-wide text-[#C68A3D] mb-4" data-reveal>Our Story</p>
-          <h2
-            className="text-3xl sm:text-4xl mb-8 leading-tight"
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600, '--reveal-delay': '90ms' }}
-            data-reveal
-          >
+      <section>
+        <div>
+          <p data-reveal>Our Story</p>
+          <h2 data-reveal style={{ '--reveal-delay': '90ms' }}>
             Born in Montreal, rooted in India
           </h2>
-          <div className="space-y-5 text-[#DDE0CE] leading-relaxed text-base sm:text-lg" style={{ '--reveal-delay': '180ms' }} data-reveal>
+          <div style={{ '--reveal-delay': '180ms' }} data-reveal>
             <p>
               Bareaya began with a simple belief — skincare should be clean,
               conscious, and rooted in tradition. Living in Canada shaped my
@@ -149,50 +148,46 @@ export default function AboutPage() {
       </section>
 
       {/* Features */}
-      <section className="px-6 py-20 sm:py-28">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-3 gap-10 sm:gap-8">
+      <section>
+        <div>
           {features.map(({ icon: Icon, title, text }, index) => (
             <div
               key={title}
-              className="text-center sm:text-left transition-transform duration-300 hover:-translate-y-1"
               style={{ '--reveal-delay': `${index * 120}ms` }}
               data-reveal
             >
-              <Icon className="mx-auto sm:mx-0 mb-4" size={28} strokeWidth={1.5} color="#8B5E3C" />
-              <h3
-                className="text-xl mb-2"
-                style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 600 }}
-              >
-                {title}
-              </h3>
-              <p className="text-[#4B5240] text-sm leading-relaxed">{text}</p>
+              <Icon size={28} strokeWidth={1.5} color="#8B5E3C" />
+              <h3>{title}</h3>
+              <p>{text}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Instagram gallery */}
-      <section className="px-6 pb-20 sm:pb-28">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-8" data-reveal>
+      <section>
+        <div>
+          <div data-reveal>
             <InstagramIcon size={18} strokeWidth={1.5} />
-            <p className="text-sm tracking-wide">Follow Us @bareaya.skin</p>
+            <p>Follow Us @bareaya.skin</p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div>
             {galleryImages.map((src, i) => (
               <a
                 key={i}
                 href="https://instagram.com/bareaya.skin"
                 target="_blank"
                 rel="noreferrer"
-                className="block aspect-square overflow-hidden"
                 style={{ '--reveal-delay': `${i * 70}ms` }}
                 data-reveal
               >
                 <img
-                  src={src}
+                  src={optimised(src, 'gallery')}
                   alt="Bareaya on Instagram"
-                  className="w-full h-full object-cover transition-all duration-300 hover:opacity-90 hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                  width={420}
+                  height={420}
                 />
               </a>
             ))}
@@ -201,19 +196,18 @@ export default function AboutPage() {
       </section>
 
       {/* Footer highlights strip */}
-      <section className="border-t border-[#E4DCC8] px-6 py-12">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-4 gap-8">
+      <section>
+        <div>
           {footerHighlights.map(({ icon: Icon, title, text }, index) => (
             <div
               key={title}
-              className="flex items-start gap-3 transition-transform duration-300 hover:-translate-y-1"
               style={{ '--reveal-delay': `${index * 90}ms` }}
               data-reveal
             >
-              <Icon size={22} strokeWidth={1.5} color="#8B5E3C" className="mt-0.5 shrink-0" />
+              <Icon size={22} strokeWidth={1.5} color="#8B5E3C" />
               <div>
-                <p className="text-sm font-semibold">{title}</p>
-                <p className="text-sm text-[#7A6A4E]">{text}</p>
+                <p>{title}</p>
+                <p>{text}</p>
               </div>
             </div>
           ))}

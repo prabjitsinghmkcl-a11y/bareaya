@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../redux/cartSlice';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
 import '../styles/product.css';
 
 const ProductDetail = () => {
@@ -25,13 +26,16 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
+  const inStock = Number(product?.stock) > 0;
+
   const handleAddToCart = () => {
-    if (product) {
+    if (product && inStock) {
       dispatch(addToCart({
         id: product._id,
         name: product.name,
         price: product.price,
         imageUrl: product.imageUrl,
+        stock: Number(product.stock) || 0,
         qty: 1
       }));
     }
@@ -51,7 +55,7 @@ const ProductDetail = () => {
       <div className="product-detail">
         {/* Left Side: Image */}
         <div className="detail-image-container" data-reveal>
-          <img src={product.imageUrl} alt={product.name} className="detail-image" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }} />
+          <img src={optimised(product.imageUrl, 'productDetail')} alt={product.name} className="detail-image" loading="eager" decoding="async" width={900} height={1125} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }} />
         </div>
 
         {/* Right Side: Information Block */}
@@ -69,16 +73,13 @@ const ProductDetail = () => {
 
           {/* Cart & Stock Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <button onClick={handleAddToCart} className="btn" style={{ flexGrow: '1', padding: '18px', fontSize: '1.2rem' }}>
-              Add to Shopping Cart
+            <button onClick={handleAddToCart} className="btn" disabled={!inStock} style={{ flexGrow: '1', padding: '18px', fontSize: '1.2rem' }}>
+              {inStock ? 'Add to Shopping Cart' : 'Out of Stock'}
             </button>
+            {inStock && <span style={{ color: '#a1a1aa' }}>{product.stock} in stock</span>}
           </div>
           
-          <p style={{ marginTop: '20px', color: product.stock > 0 ? '#10b981' : '#ef4444', fontWeight: '600' }}>
-            {product.stock > 0 ? `● In Stock (${product.stock} units available)` : `● Temporarily Out of Stock`}
-          </p>
-
-        </div>
+          </div>
       </div>
     </div>
   );

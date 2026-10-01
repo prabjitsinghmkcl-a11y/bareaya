@@ -9,7 +9,7 @@ const { sendOtpSms } = require('../utils/sendSms');
 const { setOtp, getOtp, deleteOtp } = require('../utils/otpStore');
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 };
 
 const generateOtp = () => {
@@ -25,9 +25,10 @@ const saveCustomer = async (user) => {
   );
 };
 
-// Login entry point. If the phone already exists in the database the user is
-// logged in immediately (no OTP). A brand-new phone gets an OTP by SMS and the
-// account is only created once that OTP is verified.
+// Login entry point. Both a brand-new phone and an already-registered phone
+// get an OTP by SMS; the account is only logged in once that OTP is verified in
+// verifyOtp. This handler NEVER returns a token and never reveals whether the
+// phone is already registered (that would let a caller enumerate customers).
 const sendOtp = async (req, res) => {
   try {
     const { phone } = req.body;
@@ -36,31 +37,14 @@ const sendOtp = async (req, res) => {
 
     const user = await User.findOne({ phone: normalizedPhone });
 
-    if (user) {
-      await saveCustomer(user);
-      resetAuthAttempts({ phone: normalizedPhone, ip: req.ip });
-      return res.json({
-        message: 'Welcome back! Logging you in.',
-        _id: user._id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id)
-      });
-    }
-
     const otp = generateOtp();
-    setOtp(normalizedPhone, otp, trimmedName || 'Customer');
+    setOtp(normalizedPhone, otp, (user && user.name) || trimmedName || 'Customer');
 
     await sendOtpSms(normalizedPhone, otp);
 
-    resetAuthAttempts({ phone: normalizedPhone, ip: req.ip });
+    resetAuthAttempts({ phone: normalizedPhone });
 
-    res.json({
-      message: `OTP sent to ${normalizedPhone}.`,
-      registered: true
-    });
+    res.json({ message: `OTP sent to ${normalizedPhone}.` });
   } catch (error) {
     sendErrorResponse(res, error);
   }
@@ -98,15 +82,13 @@ const verifyOtp = async (req, res) => {
       });
     } else {
       user.verified = true;
-      user.otp = undefined;
-      user.otpExpires = undefined;
       await user.save();
     }
 
     deleteOtp(normalizedPhone);
 
     await saveCustomer(user);
-    resetAuthAttempts({ phone: normalizedPhone, ip: req.ip });
+    resetAuthAttempts({ phone: normalizedPhone });
 
     res.json({
       message: 'Login successful!',
@@ -126,7 +108,11 @@ const verifyOtp = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email: new RegExp(`^${String(email || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+    // `password` is select:false on the schema, so it must be opted into
+    // explicitly here — this is the only place that legitimately needs it.
+    const user = await User.findOne({
+      email: new RegExp(`^${String(email || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+    }).select('+password');
 
     if (user && user.password && (await bcrypt.compare(password, user.password))) {
       resetAuthAttempts({ email: user.email });
@@ -149,7 +135,7 @@ const loginUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: 'user' }).select('-password -otp -otpExpires');
+    const users = await User.find({ role: 'user' });
     res.json(users);
   } catch (error) {
     sendErrorResponse(res, error);

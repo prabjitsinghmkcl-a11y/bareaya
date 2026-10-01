@@ -163,6 +163,21 @@
 	padding: 12px 14px;
 }
 
+.checkout-notice {
+	align-items: center;
+	background: #fffdf5;
+	border: 1px solid #f0e2b8;
+	border-radius: 10px;
+	color: #7a5c00;
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.92rem;
+	gap: 12px;
+	justify-content: space-between;
+	margin: 0;
+	padding: 12px 14px;
+}
+
 /* ---------- Order summary ---------- */
 .checkout-summary {
 	background: #ffffff;

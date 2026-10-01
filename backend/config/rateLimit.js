@@ -172,10 +172,13 @@ const authenticatedLimiter = mkRateLimit({
   keyGen: (req) => (req.user && req.user._id ? `user:${req.user._id.toString()}` : ipKey(req))
 });
 
-const resetAuthAttempts = ({ phone, email, ip } = {}) => {
+// Clears the per-ACCOUNT counter after a genuine successful authentication.
+// The per-IP counter is deliberately NOT cleared: it is an abuse-prevention
+// budget, and clearing it on success let a caller launder an unlimited number
+// of attempts by interleaving successful requests with probes.
+const resetAuthAttempts = ({ phone, email } = {}) => {
   if (phone) store.delete(`authacct:ph:${String(phone).trim()}`);
   if (email) store.delete(`authacct:em:${String(email).trim().toLowerCase()}`);
-  if (ip) store.delete(`authip:ip:${String(ip).replace('::ffff:', '')}`);
 };
 
 module.exports = {

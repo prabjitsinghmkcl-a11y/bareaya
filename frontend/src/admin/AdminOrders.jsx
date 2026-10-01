@@ -2,12 +2,22 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { adminFetch, resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
 
-const ORDER_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'];
+// Which status each order may move to next. The server enforces the same rules
+// and rejects anything not listed here, so the dropdown cannot offer a
+// transition that is guaranteed to fail (e.g. un-cancelling a cancelled order).
+const ALLOWED_NEXT_STATUS = {
+  pending: ['paid', 'cancelled'],
+  paid: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: []
+};
 
 const AdminOrders = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(() => {
     try {
@@ -25,25 +35,23 @@ const AdminOrders = () => {
     if (user) setUserInfo(user);
   }, [user]);
 
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      const data = await adminFetch('/api/orders', { token: userInfo.token });
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(resolveAdminError(err, logout, navigate) || '');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userInfo || userInfo.role !== 'admin') {
       navigate('/admin/login');
       return;
     }
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch('/api/orders', {
-          headers: { Authorization: `Bearer ${userInfo.token}` }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Could not load orders');
-        setOrders(Array.isArray(data) ? data : []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo, navigate]);
@@ -53,21 +61,16 @@ const AdminOrders = () => {
   const handleStatusChange = async (orderId, status) => {
     setError('');
     try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
+      await adminFetch(`/api/orders/${orderId}/status`, {
+        token: userInfo.token,
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`
-        },
-        body: JSON.stringify({ status })
+        body: { status }
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Could not update status');
-      }
       setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status } : o)));
     } catch (err) {
-      setError(err.message);
+      setError(resolveAdminError(err, logout, navigate) || '');
+      // The server may have refused the transition; re-read the real status.
+      if (err?.name !== 'SessionExpiredError') fetchOrders();
     }
   };
 
@@ -96,6 +99,11 @@ const AdminOrders = () => {
               [addr.firstName, addr.lastName].filter(Boolean).join(' ').trim() ||
               (order.userId && order.userId.name) ||
               'Customer';
+            // The delivery phone on the order wins; fall back to the phone on the
+            // customer's account for orders placed before the checkout captured one.
+            const customerPhone = (addr.phone || (order.userId && order.userId.phone) || '').trim();
+            const customerEmail =
+              (addr.email || (order.userId && order.userId.email) || '').trim();
             const addressLines = [
               [addr.street, addr.apartment].filter(Boolean).join(', '),
               [addr.city, addr.state].filter(Boolean).join(', '),
@@ -119,6 +127,9 @@ const AdminOrders = () => {
                     <p className="admin-row-sub">
                       {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
                     </p>
+                    {customerPhone && (
+                      <p className="admin-row-sub">Phone: {customerPhone}</p>
+                    )}
                   </div>
                   <div className="admin-actions admin-actions--head">
                     <span className="admin-badge" style={{ alignSelf: 'center', background: 'rgba(255,255,255,0.08)', color: '#e4e4e7' }}>
@@ -154,7 +165,17 @@ const AdminOrders = () => {
                     <div className="admin-order-block">
                       <h4>Customer & delivery details</h4>
                       <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Name:</strong> {customerName}</p>
-                      <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Email:</strong> {addr.email || '—'}</p>
+                      <p className="admin-row-sub">
+                        <strong style={{ color: '#fff' }}>Phone:</strong>{' '}
+                        {customerPhone ? (
+                          <a href={`tel:${customerPhone}`} className="admin-phone-link">
+                            {customerPhone}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </p>
+                      <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Email:</strong> {customerEmail || '—'}</p>
                       <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Address:</strong> {addressLines.length ? addressLines.join(', ') : '—'}</p>
                     </div>
 
@@ -173,9 +194,16 @@ const AdminOrders = () => {
                     value={order.status || 'pending'}
                     onChange={(e) => handleStatusChange(order._id, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
+                    disabled={(ALLOWED_NEXT_STATUS[order.status] || []).length === 0}
                   >
-                    {ORDER_STATUSES.map((s) => (
-                      <option key={s} value={s} disabled={s === order.status}>{s}</option>
+                    {/* The current status stays as a disabled placeholder so the
+                        control still renders its value, followed by only the
+                        transitions the server accepts. */}
+                    <option value={order.status || 'pending'} disabled>
+                      {order.status || 'pending'}
+                    </option>
+                    {(ALLOWED_NEXT_STATUS[order.status] || []).map((s) => (
+                      <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
                 </div>

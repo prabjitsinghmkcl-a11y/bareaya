@@ -24,6 +24,26 @@ const Contact = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // The form sets noValidate, so nothing checked these before the round-trip.
+    // Validate here to match the server's rules and give a per-field message
+    // instead of one generic error.
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const message = form.message.trim();
+    if (name.length < 2) {
+      setError('Please enter your name (at least 2 characters).');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (message.length < 5) {
+      setError('Please write your message (at least 5 characters).');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccess(false);
@@ -31,14 +51,14 @@ const Contact = () => {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ name, email, message })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || 'Could not send your message. Please try again.');
       setSuccess(true);
       setForm({ name: '', email: '', message: '' });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Could not send your message. Please try again.');
     } finally {
       setLoading(false);
     }

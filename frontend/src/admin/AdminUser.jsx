@@ -2,10 +2,11 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft } from 'lucide-react';
+import { adminFetch, resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
 
 const AdminUsers = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(() => {
     try {
@@ -28,15 +29,12 @@ const AdminUsers = () => {
       return;
     }
     const fetchUsers = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/auth/user', {
-          headers: { Authorization: `Bearer ${userInfo.token}` }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Could not load users');
+        const data = await adminFetch('/api/auth/user', { token: userInfo.token });
         setUsers(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err.message);
+        setError(resolveAdminError(err, logout, navigate) || '');
       } finally {
         setLoading(false);
       }

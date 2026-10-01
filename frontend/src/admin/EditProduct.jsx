@@ -2,11 +2,13 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft } from 'lucide-react';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
+import { resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
 
 const EditProduct = () => {
   const { id } = useParams();
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(() => {
     try {
@@ -20,6 +22,7 @@ const EditProduct = () => {
     description: '',
     price: '',
     category: '',
+    tag: '',
     stock: ''
   });
   const [image, setImage] = useState(null);
@@ -48,6 +51,7 @@ const EditProduct = () => {
           description: data.description || '',
           price: data.price || '',
           category: data.category || '',
+          tag: data.tag || '',
           stock: data.stock ?? ''
         });
         setImageUrl(data.imageUrl || '');
@@ -57,9 +61,16 @@ const EditProduct = () => {
         setLoading(false);
       }
     };
-    fetchProduct();
+fetchProduct();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo, navigate, id]);
+
+  // Release the blob URL backing the preview when it is replaced or unmounted.
+  useEffect(() => {
+    return () => {
+      if (preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   if (!userInfo || userInfo.role !== 'admin') return null;
 
@@ -71,7 +82,10 @@ const EditProduct = () => {
   const handleFile = (e) => {
     const file = e.target.files[0];
     setImage(file || null);
-    setPreview(file ? URL.createObjectURL(file) : '');
+    setPreview((prev) => {
+      if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : '';
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -87,18 +101,23 @@ const EditProduct = () => {
       Object.entries(form).forEach(([key, value]) => fd.append(key, value));
       if (image) fd.append('image', image);
 
-      const res = await fetch(`/api/products/${id}`, {
+const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${userInfo.token}` },
         body: fd
       });
+      if (res.status === 401) {
+        logout();
+        navigate('/admin/login', { replace: true });
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Could not update product.');
       }
       navigate('/admin/products');
     } catch (err) {
-      setError(err.message);
+      setError(resolveAdminError(err, logout, navigate) || 'Could not update product.');
     } finally {
       setSaving(false);
     }
@@ -139,6 +158,15 @@ const EditProduct = () => {
           <input type="text" name="category" value={form.category} onChange={handleChange} required />
         </label>
         <label>
+          Home Filter Tag
+          <select name="tag" value={form.tag} onChange={handleChange}>
+            <option value="">None</option>
+            <option value="Hydration">Hydration</option>
+            <option value="Clarity">Clarity</option>
+            <option value="Protection">Protection</option>
+          </select>
+        </label>
+        <label>
           Stock
           <input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required />
         </label>
@@ -146,11 +174,16 @@ const EditProduct = () => {
           Product Image
           {(preview || imageUrl) && (
             <img
-              src={preview || imageUrl}
+              // `preview` is a local blob from the file input, so only the
+              // remote Cloudinary URL gets transformed.
+              src={preview || optimised(imageUrl, 'productCard') || SITE_LOGO}
               alt="Product preview"
               className="admin-image-preview"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }}
+              loading="lazy"
+              decoding="async"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }}
             />
+
           )}
           <input type="file" accept="image/*" onChange={handleFile} />
         </label>

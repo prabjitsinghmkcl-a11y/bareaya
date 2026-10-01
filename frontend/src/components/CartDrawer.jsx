@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeCartDrawer, updateQuantity } from '../redux/cartSlice';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
 import '../styles/cartDrawer.css';
 
 const CartDrawer = () => {
@@ -36,11 +37,15 @@ const CartDrawer = () => {
           {cartItems.map((item) => (
             <div className="cart-drawer-item" key={item.id}>
               <img
-                src={item.imageUrl || item.image}
+                src={optimised(item.imageUrl || item.image, 'thumb')}
                 alt={item.name}
+                loading="lazy"
+                decoding="async"
+                width={160}
+                height={160}
                 onError={(event) => {
                   event.currentTarget.onerror = null;
-                  event.currentTarget.src = '/logo.png';
+                  event.currentTarget.src = SITE_LOGO;
                 }}
               />
               <div className="cart-drawer-item-info">

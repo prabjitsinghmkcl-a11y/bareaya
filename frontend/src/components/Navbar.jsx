@@ -2,7 +2,8 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { useSelector } from 'react-redux';
-import { Heart, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { optimised } from '../utils/cloudinary';
 import '../styles/navbar.css';
 
 const Navbar = () => {
@@ -15,7 +16,6 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const skinAnalysisUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeQt9H4-6SGsb-wW-2vwgv00LfRmeon7P8M7ec0BrzCjqxE1Q/viewform';
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 24);
@@ -48,7 +48,7 @@ const Navbar = () => {
       <div className="navbar-main">
         <div className="navbar-brand">
           <Link to="/" aria-label="Bareaya home">
-            <img src="https://res.cloudinary.com/aao6ldeb/image/upload/v1789571534/bareaya/site/logo.png" alt="Bareaya" className="navbar-logo-image" />
+            <img src={optimised('https://res.cloudinary.com/aao6ldeb/image/upload/v1789571534/bareaya/site/logo.png', 'thumb')} alt="Bareaya" className="navbar-logo-image" width={160} height={160} />
           </Link>
         </div>
         {isSearchOpen && (
@@ -64,6 +64,14 @@ const Navbar = () => {
             <button type="submit" aria-label="Submit search">Search</button>
           </form>
         )}
+        <div className={`navbar-menu${isMenuOpen ? ' navbar-menu--open' : ''}`}>
+          <ul className="navbar-links">
+            {!isHomePage && <li><Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link></li>}
+            <li><Link to="/shop" onClick={() => setIsMenuOpen(false)}>Shop</Link></li>
+            <li><Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link></li>
+            <li><Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact</Link></li>
+          </ul>
+        </div>
         <div className="navbar-actions">
           <button
             type="button"
@@ -74,8 +82,7 @@ const Navbar = () => {
           >
             <Search />
           </button>
-          <Link to={user ? '/profile' : '/login'} aria-label={user ? 'Profile' : 'Login'}><UserRound /></Link>
-          <button type="button" aria-label="Wishlist" onClick={() => navigate('/shop')}><Heart /></button>
+          <Link to={user ? '/profile' : '/login'} className="navbar-profile" aria-label={user ? 'Profile' : 'Login'}><UserRound /></Link>
           <Link to="/cart" className="navbar-cart-icon" aria-label={`Cart with ${cartItems.length} items`}><ShoppingBag /><span>{cartItems.length}</span></Link>
         </div>
       </div>
@@ -90,15 +97,6 @@ const Navbar = () => {
         <span />
         <span />
       </button>
-      <div className={`navbar-menu${isMenuOpen ? ' navbar-menu--open' : ''}`}>
-        <ul className="navbar-links">
-          {!isHomePage && <li><Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link></li>}
-          <li><Link to="/shop" onClick={() => setIsMenuOpen(false)}>Shop</Link></li>
-          <li><a href={skinAnalysisUrl} target="_blank" rel="noreferrer">Consultation</a></li>
-          <li><Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link></li>
-          <li><Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact</Link></li>
-        </ul>
-      </div>
       {isMenuOpen && <button type="button" className="navbar-menu-close" aria-label="Close navigation menu" onClick={() => setIsMenuOpen(false)}><X /></button>}
     </nav>
   );

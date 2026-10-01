@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   ArrowRight
 } from 'lucide-react';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
+import { adminFetch, resolveAdminError } from '../utils/adminApi';
 import '../styles/admin-dashboard.css';
 
 const STATUS_META = {
@@ -24,7 +26,7 @@ const STATUS_META = {
 const fmtMoney = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const AdminDashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [error, setError] = useState('');
@@ -37,22 +39,14 @@ const AdminDashboard = () => {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/analytics', {
-          headers: { Authorization: `Bearer ${user.token}` }
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setStats(data);
-        } else {
-          if (res.status === 401) navigate('/admin/login');
-          setError(data.message || 'Failed to load dashboard data');
-        }
+        const data = await adminFetch('/api/analytics', { token: user.token });
+        setStats(data);
       } catch (err) {
-        setError(err.message || 'Failed to load dashboard data');
+        setError(resolveAdminError(err, logout, navigate) || 'Failed to load dashboard data');
       }
     };
     fetchStats();
-  }, [user, navigate]);
+  }, [user, navigate, logout]);
 
   const cardData = stats
     ? [
@@ -209,7 +203,7 @@ const AdminDashboard = () => {
                 <div className="adl-stock-list">
                   {lowStock.map((p) => (
                     <div key={p._id} className="adl-stock-row">
-                      <img src={p.imageUrl || '/logo.png'} alt={p.name} className="adl-stock-img" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }} />
+                      <img src={optimised(p.imageUrl, 'thumb') || SITE_LOGO} alt={p.name} className="adl-stock-img" loading="lazy" decoding="async" width={160} height={160} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }} />
                       <div className="adl-stock-meta">
                         <p className="adl-stock-name">{p.name}</p>
                         <span className={`adl-stock-count ${p.stock === 0 ? 'adl-stock-count--out' : ''}`}>

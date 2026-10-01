@@ -66,7 +66,7 @@
   animation-delay: var(--d, 0ms);
   color: var(--br-ink);
   display: inline-block;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: 1.6rem;
   opacity: 0;
 }
@@ -85,7 +85,7 @@
 .br-preloader p {
   animation: brPulse 1.2s ease-in-out infinite;
   color: var(--br-muted);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   letter-spacing: 0.34em;
   margin: 16px 0 0;
@@ -235,6 +235,7 @@
 
 /* ---------- Marquee ---------- */
 .br-marquee {
+  background: #ece5d6;
   border-bottom: 1px solid rgba(53, 67, 44, 0.14);
   border-top: 1px solid rgba(53, 67, 44, 0.14);
   overflow: hidden;
@@ -248,20 +249,17 @@
   width: max-content;
 }
 
-.br-marquee-track:hover {
-  animation-play-state: paused;
-}
-
 .br-marquee-group {
   align-items: center;
   display: flex;
+  flex: 0 0 auto;
 }
 
 .br-marquee-group span {
   align-items: center;
   color: var(--br-ink);
   display: flex;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: 1.4rem;
   font-style: italic;
   gap: 4rem;
@@ -276,7 +274,7 @@
 
 @keyframes brMarquee {
   to {
-    transform: translateX(-100%);
+    transform: translateX(-25%);
   }
 }
 

@@ -53,11 +53,22 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'paid', 'shipped', 'delivered', 'cancelled'],
       default: 'pending'
+    },
+    // True only when inventory was actually deducted for this order. Cancelling
+    // restores stock exclusively when this flag is set, and clears it in the
+    // same atomic update, so a double-cancel can never return stock twice.
+    stockDeducted: {
+      type: Boolean,
+      default: false
     }
   },
   {
     timestamps: true
   }
 );
+
+// "My orders" and the admin order list both filter/sort on these.
+orderSchema.index({ userId: 1, createdAt: -1 });
+orderSchema.index({ status: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Order', orderSchema);

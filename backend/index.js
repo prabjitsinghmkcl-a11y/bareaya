@@ -47,6 +47,7 @@
 
 // startServer();
 const express = require('express');
+const compression = require('compression');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -60,6 +61,20 @@ dotenv.config();
 const app = express();
 
 app.disable('x-powered-by');
+
+// gzip/br for every text-ish response (JS, CSS, HTML, JSON, SVG). This shrinks
+// the ~122 kB gzipped main bundle and all API JSON. Mounted first so it also
+// covers static assets; the Razorpay webhook keeps its raw body regardless
+// because compression only acts on the response, never the parsed request.
+app.use(
+  compression({
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    },
+  })
+);
 
 // Trust proxy hops so req.ip reflects the real client as needed for rate limiting
 if (rateConfig.TRUST_PROXY > 0) {
@@ -134,13 +149,39 @@ app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  const BUILD_DIR = path.join(__dirname, '../frontend/build');
+
+  // Content-hashed files under /static can be cached forever — a new deploy
+  // changes the hash, so a stale cache entry can never be served.
+  app.use(
+    '/static',
+    express.static(path.join(BUILD_DIR, 'static'), {
+      maxAge: '1y',
+      immutable: true,
+    })
+  );
+
+  // Everything else in the build (index.html, manifest, robots, icons) must
+  // always be revalidated so a new deploy is picked up immediately.
+  app.use(
+    express.static(BUILD_DIR, {
+      maxAge: '1h',
+      etag: true,
+      lastModified: true,
+      setHeaders: (res, filePath) => {
+        if (path.basename(filePath) === 'index.html') {
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        }
+      },
+    })
+  );
 
   app.use((req, res) => {
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ message: 'API route not found' });
     }
-    res.sendFile(path.resolve(__dirname, '../frontend/build/index.html'));
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.sendFile(path.resolve(BUILD_DIR, 'index.html'));
   });
 } else {
   app.get('/', (req, res) => {

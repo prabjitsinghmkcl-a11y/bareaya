@@ -27,7 +27,7 @@
 }
 
 .contact-content h1 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: clamp(3rem, 7vw, 5.6rem);
   font-weight: 500;
   line-height: 1;
@@ -36,7 +36,7 @@
 
 .contact-intro {
   color: #686c5b;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 1.1rem;
   line-height: 1.7;
   margin: 28px 0 48px;
@@ -52,7 +52,7 @@
 }
 
 .contact-details h2 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 500;
   margin: 0 0 8px;
@@ -61,7 +61,7 @@
 .contact-details a,
 .contact-shop-link {
   color: #8b5e3c;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   text-decoration: none;
 }
 
@@ -97,7 +97,7 @@
 
 .contact-chip strong {
   display: block;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: 0.98rem;
   font-weight: 500;
 }
@@ -105,7 +105,7 @@
 .contact-chip span {
   color: #686c5b;
   display: block;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.78rem;
   margin-top: 3px;
 }
@@ -129,7 +129,7 @@
 }
 
 .contact-form-wrap h2 {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-heading);
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 500;
   line-height: 1.1;
@@ -138,7 +138,7 @@
 
 .contact-form-intro {
   color: #686c5b;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.98rem;
   line-height: 1.6;
   margin: 12px 0 28px;
@@ -163,7 +163,7 @@
 
 .contact-field label {
   color: #263020;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -178,7 +178,7 @@
   border: 1px solid #d5cfc0;
   border-radius: 10px;
   color: #263020;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   padding: 13px 14px;
   transition: border-color 180ms ease, box-shadow 180ms ease;
@@ -200,7 +200,7 @@
 .contact-error,
 .contact-success {
   border-radius: 10px;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.88rem;
   margin: 0;
   padding: 12px 14px;
@@ -224,7 +224,7 @@
   border-radius: 999px;
   color: #ffffff;
   cursor: pointer;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 700;
   justify-self: start;

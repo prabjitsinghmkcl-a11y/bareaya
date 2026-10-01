@@ -7,6 +7,8 @@ const schemas = require('../config/validationSchemas');
 const router = express.Router();
 
 router.post("/order",  protect, authenticatedLimiter, validateBody(schemas.paymentOrder),  createOrder);
-router.post("/verify", publicLimiter, validateBody(schemas.paymentVerify), verifyPayment);
+// Requires a session: this endpoint validates a live Razorpay signature, and
+// leaving it open turned it into a free signature-validation oracle.
+router.post("/verify", protect, publicLimiter, validateBody(schemas.paymentVerify), verifyPayment);
 
 module.exports = router;

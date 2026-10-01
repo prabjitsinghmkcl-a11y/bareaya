@@ -2,10 +2,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft } from 'lucide-react';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
+import { adminFetch, resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
 
 const AdminProducts = () => {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState(() => {
     try {
@@ -31,13 +33,14 @@ const AdminProducts = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo, navigate]);
 
-  const fetchProducts = async () => {
+const fetchProducts = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const res = await fetch('/api/products');
-      const data = await res.json();
+      const data = await adminFetch('/api/products');
       setProducts(Array.isArray(data) ? data : []);
     } catch (fetchError) {
-      setError(fetchError.message);
+      setError(resolveAdminError(fetchError, logout, navigate) || '');
     } finally {
       setLoading(false);
     }
@@ -46,17 +49,10 @@ const AdminProducts = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${userInfo.token}` }
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Could not delete product.');
-      }
+      await adminFetch(`/api/products/${id}`, { token: userInfo.token, method: 'DELETE' });
       setProducts((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
-      setError(err.message);
+      setError(resolveAdminError(err, logout, navigate) || '');
     }
   };
 
@@ -86,10 +82,15 @@ const AdminProducts = () => {
               <div className="admin-row-info">
                 <img
                   className="admin-row-img"
-                  src={product.imageUrl || '/logo.png'}
+                  src={optimised(product.imageUrl, 'thumb') || SITE_LOGO}
                   alt={product.name}
-                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }}
+                  loading="lazy"
+                  decoding="async"
+                  width={160}
+                  height={160}
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }}
                 />
+
                 <div>
                   <p className="admin-row-title">{product.name}</p>
                   <p className="admin-row-sub">

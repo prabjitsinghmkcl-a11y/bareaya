@@ -18,12 +18,12 @@
 }
 
 .product-image {
-	aspect-ratio: 4 / 3;
+	aspect-ratio: 1 / 1;
 	background: #f3f3f1;
 	display: block;
 	height: auto;
 	object-fit: contain;
-	padding: 18px;
+	padding: 10px;
 	width: 100%;
 }
 
@@ -116,6 +116,7 @@
 	}
 
 	.product-image {
+		aspect-ratio: 4 / 3;
 		padding: 12px;
 	}
 }

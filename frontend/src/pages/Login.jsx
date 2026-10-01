@@ -47,11 +47,9 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        if (data.token) {
-          login(data);
-          navigate('/cart');
-          return;
-        }
+        // SECURITY: send-otp never returns a token. Login is only ever
+        // completed by verify-otp, so an existing phone number alone can
+        // never be exchanged for a session.
         setStep('otp');
         setSuccess(`OTP sent to ${phone.trim()}`);
         startTimer();

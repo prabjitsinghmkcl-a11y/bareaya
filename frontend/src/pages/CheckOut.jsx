@@ -1,8 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useCallback, useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearCart } from '../redux/cartSlice';
+import { clearCart, refreshCartPricing } from '../redux/cartSlice';
 import { AuthContext } from '../context/Authcontext';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
 import '../styles/checkout.css';
 
 const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID || '';
@@ -42,6 +43,7 @@ const Checkout = () => {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     street: '',
     apartment: '',
     city: '',
@@ -52,8 +54,13 @@ const Checkout = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [razorpayKey, setRazorpayKey] = useState('');
+  // True from the moment the Razorpay modal opens until it is dismissed or the
+  // payment resolves. Keeps the pay button disabled for the whole modal
+  // lifetime instead of only for the API round-trip.
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [pricingStale, setPricingStale] = useState(false);
 
   const isTestMode = (razorpayKey || RAZORPAY_KEY_ID).startsWith('rzp_test');
   const GST_RATE = 0.18;
@@ -62,6 +69,52 @@ const Checkout = () => {
   const totalAmount = subtotal + gstAmount;
 
   const payloadItems = () => cartItems.map((item) => ({ productId: item.id, quantity: item.qty }));
+
+  // The cart persists a price snapshot in localStorage and the server always
+  // recomputes the total from the database. After any price change the two
+  // disagree and the server rejects the order with a 400 that used to leave the
+  // customer with no way forward. Re-sync the cart from live product data so
+  // the displayed total is the amount that will actually be charged.
+  const syncCartPricing = useCallback(async () => {
+    if (cartItems.length === 0) return;
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data)) return;
+      dispatch(refreshCartPricing(data));
+      setPricingStale(false);
+    } catch {
+      // Leave the cart as-is; the server remains the authority on the total.
+    }
+  }, [cartItems.length, dispatch]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (cartItems.length === 0) return;
+    (async () => {
+      if (cancelled) return;
+      await syncCartPricing();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [syncCartPricing, cartItems.length]);
+
+  // A rejected order because the total or availability moved under the customer
+  // is recoverable: refresh the cart and tell them what changed, instead of
+  // leaving a dead 400 with no forward path.
+  const handleOrderError = (err) => {
+    const message = err?.message || 'Something went wrong. Please try again.';
+    if (/does not match|no longer available|available in your cart|limited stock/i.test(message)) {
+      setPricingStale(true);
+      setError(
+        `${message} Your cart has been updated with the latest prices and availability — please review the new total and try again.`
+      );
+      syncCartPricing();
+      return;
+    }
+    setError(message);
+  };
 
   const userInfo = (() => {
     try {
@@ -72,6 +125,14 @@ const Checkout = () => {
   })();
 
   const authToken = userInfo.token || '';
+
+  useEffect(() => {
+    setBilling((prev) => ({
+      ...prev,
+      email: prev.email || userInfo.email || '',
+      phone: prev.phone || userInfo.phone || ''
+    }));
+  }, [userInfo.email, userInfo.phone]);
 
   const refreshUserName = () => {
     const name = [billing.firstName, billing.lastName].filter(Boolean).join(' ').trim();
@@ -86,13 +147,14 @@ const Checkout = () => {
   };
 
   const validateForm = () => {
-    const required = ['firstName', 'lastName', 'email', 'street', 'city', 'state', 'postalCode'];
+    const required = ['firstName', 'lastName', 'email', 'phone', 'street', 'city', 'state', 'postalCode'];
     for (const field of required) {
       if (!billing[field].trim()) {
         const label = {
           firstName: 'First name',
           lastName: 'Last name',
           email: 'Email address',
+          phone: 'phone number',
           street: 'Street address',
           city: 'City',
           state: 'State',
@@ -104,6 +166,10 @@ const Checkout = () => {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billing.email.trim())) {
       setError('Please enter a valid email address.');
+      return false;
+    }
+    if (!/^[6-9]\d{9}$/.test(billing.phone.trim())) {
+      setError('Please enter a valid 10-digit Indian mobile number.');
       return false;
     }
     if (!/^[0-9A-Za-z\s-]{3,20}$/.test(billing.postalCode.trim())) {
@@ -132,10 +198,14 @@ const Checkout = () => {
     return data;
   };
 
-  const verifyPayment = async (paymentData) => {
+const verifyPayment = async (paymentData) => {
+    if (!authToken) throw new Error('Please log in to place an order.');
     const res = await fetch('/api/payment/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`
+      },
       body: JSON.stringify(paymentData)
     });
     const data = await res.json();
@@ -172,8 +242,10 @@ const Checkout = () => {
     }
   };
 
-  const handlePaymentSuccess = async (paymentResponse) => {
+const handlePaymentSuccess = async (paymentResponse) => {
     try {
+      setPaymentOpen(false);
+      setLoading(false);
       await verifyPayment({
         razorpay_order_id: paymentResponse.razorpay_order_id,
         razorpay_payment_id: paymentResponse.razorpay_payment_id,
@@ -187,11 +259,11 @@ const Checkout = () => {
         paymentResponse.razorpay_signature
       );
 
-      refreshUserName();
+refreshUserName();
       dispatch(clearCart());
       navigate('/', { state: { orderSuccess: 'Your order is placed successfully!' } });
     } catch (err) {
-      setError(err.message);
+      handleOrderError(err);
     }
   };
 
@@ -207,12 +279,12 @@ const Checkout = () => {
     setLoading(true);
     setError('');
     try {
-      await createOrder('', 'cod');
+await createOrder('', 'cod');
       refreshUserName();
       dispatch(clearCart());
       navigate('/', { state: { orderSuccess: 'Your order is placed successfully!' } });
     } catch (err) {
-      setError(err.message);
+      handleOrderError(err);
     } finally {
       setLoading(false);
     }
@@ -239,6 +311,9 @@ const Checkout = () => {
       return;
     }
 
+// Local (not state) so the `finally` below sees it synchronously — reading
+    // `paymentOpen` there would still be the pre-update value on this render.
+    let modalOpened = false;
     try {
       const order = await createRazorpayOrder();
       const activeKey = order.key_id || RAZORPAY_KEY_ID;
@@ -257,25 +332,41 @@ const Checkout = () => {
         order_id: order.id,
         prefill: {
           name: `${billing.firstName} ${billing.lastName}`.trim() || userInfo.name || '',
-          email: billing.email.trim() || userInfo.email || ''
+          email: billing.email.trim() || userInfo.email || '',
+          contact: billing.phone.trim() || userInfo.phone || ''
         },
         notes: {
           address: `${billing.street}, ${billing.apartment ? billing.apartment + ', ' : ''}${billing.city}, ${billing.state}, ${billing.postalCode}, ${billing.country}`
         },
         theme: { color: '#1d1d1d' },
-        handler: handlePaymentSuccess,
+handler: handlePaymentSuccess,
         modal: {
-          ondismiss: () => {}
+          ondismiss: () => {
+            // The user closed the gateway without paying: release the button and
+            // say so, instead of leaving a silent no-op.
+            setPaymentOpen(false);
+            setLoading(false);
+            setError('Payment was cancelled. Your cart has been saved.');
+          }
         }
       };
 
       const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', handlePaymentError);
+      razorpay.on('payment.failed', (response) => {
+        setPaymentOpen(false);
+        setLoading(false);
+        handlePaymentError(response);
+      });
+      setPaymentOpen(true);
+      modalOpened = true;
       razorpay.open();
     } catch (err) {
       setError(err.message || 'Could not start payment. Please try again.');
     } finally {
-      setLoading(false);
+      // Only clear the pre-modal spinner here. Once the modal is open the
+      // button must stay disabled until the modal itself resolves, otherwise a
+      // second click creates a duplicate Razorpay order.
+      if (!modalOpened) setLoading(false);
     }
   };
 
@@ -435,6 +526,21 @@ const Checkout = () => {
           </div>
 
           <div className="form-field">
+            <label htmlFor="phone">Phone number <span className="required">*</span></label>
+            <input
+              id="phone"
+              type="tel"
+              name="phone"
+              placeholder="10-digit mobile number"
+              inputMode="numeric"
+              maxLength={10}
+              value={billing.phone}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="form-field">
             <label htmlFor="orderNotes">Order notes (optional)</label>
             <textarea
               id="orderNotes"
@@ -447,6 +553,12 @@ const Checkout = () => {
           </div>
 
           {error && <p className="checkout-error" role="alert">{error}</p>}
+      {pricingStale && (
+        <p className="checkout-notice" role="status">
+          Prices and availability have been refreshed from the store. Please review the updated total below before paying.
+          <button type="button" className="btn btn-ghost" onClick={syncCartPricing}>Refresh again</button>
+        </p>
+      )}
         </section>
 
         <aside className="checkout-summary" aria-label="Your order" data-reveal style={{ '--reveal-delay': '240ms' }}>
@@ -461,10 +573,15 @@ const Checkout = () => {
               <div key={item.id} className="order-review-item">
                 <div className="order-review-product">
                   <img
-                    src={item.imageUrl || item.image || '/logo.png'}
+                    src={optimised(item.imageUrl || item.image, 'thumb') || SITE_LOGO}
                     alt={item.name}
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }}
+                    loading="lazy"
+                    decoding="async"
+                    width={160}
+                    height={160}
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }}
                   />
+
                   <span>{item.name} <em>× {item.qty}</em></span>
                 </div>
                 <span className="order-review-price">₹{(item.price * item.qty).toFixed(2)}</span>
@@ -519,7 +636,7 @@ const Checkout = () => {
             )}
           </div>
 
-          <button type="button" className="btn" onClick={handlePlaceOrder} disabled={loading}>
+          <button type="button" className="btn" onClick={handlePlaceOrder} disabled={loading || paymentOpen}>
             {loading
               ? 'Processing...'
               : paymentMethod === 'cod'

@@ -54,8 +54,13 @@ const buildConfirmationHtml = (order) => {
   `;
 };
 
-// Decrement stock for order items. Returns the items that could not be
-// fulfilled (insufficient stock). No rollback happens here.
+// Decrement stock for order items, atomically, one conditional update per line.
+// Each update only matches when enough stock is present, so concurrent orders
+// cannot oversell. Returns BOTH sets:
+//   decremented - lines that were actually deducted, and therefore the only
+//                 lines that may ever be restored
+//   failed      - lines that were NOT deducted (missing product or short stock)
+// No rollback happens here; the caller decides.
 const decrementStock = async (items = []) => {
   const stockResults = await Promise.all(
     items.map((item) =>
@@ -65,10 +70,18 @@ const decrementStock = async (items = []) => {
       )
     )
   );
-  return items.filter((item, index) => stockResults[index].matchedCount !== 1);
+  const decremented = [];
+  const failed = [];
+  items.forEach((item, index) => {
+    if (stockResults[index].matchedCount === 1) decremented.push(item);
+    else failed.push(item);
+  });
+  return { decremented, failed };
 };
 
-// Revert stock decrements, e.g. when a COD order cannot be completed.
+// Revert stock decrements. MUST only ever be called with the `decremented`
+// list returned by decrementStock — passing the full item list would add back
+// quantities that were never deducted and inflate inventory.
 const restoreStock = async (items = []) => {
   await Promise.all(
     items.map((item) =>
@@ -135,7 +148,7 @@ const finalizeRazorpayOrder = async ({ razorpayOrderId, paymentId }) => {
     return { order, found: true, alreadyFinalized: true };
   }
 
-  const failed = await decrementStock(claimed.items);
+  const { failed } = await decrementStock(claimed.items);
   if (failed.length > 0) {
     // Payment is already captured so the order must stand. Log the shortfall
     // for admin attention instead of pretending the order never happened.
@@ -143,6 +156,12 @@ const finalizeRazorpayOrder = async ({ razorpayOrderId, paymentId }) => {
       `[OrderWorkflow] Stock shortfall on order ${claimed._id}:`,
       failed.map((item) => String(item.productId)).join(', ')
     );
+  } else {
+    // Record that inventory is reserved, so a cancellation gives it back once.
+    // Left false on a shortfall: nothing was deducted for those lines, so
+    // restoring them later would manufacture stock.
+    claimed.stockDeducted = true;
+    await claimed.save();
   }
 
   await syncCustomerName(claimed);

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../redux/cartSlice';
+import { optimised } from '../utils/cloudinary';
 import "../styles/productCart.css"; // Import the CSS file for styling
 
 const ProductCart = ({ product, hideImage = false }) => {
@@ -32,14 +33,23 @@ const ProductCart = ({ product, hideImage = false }) => {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
   };
 
+  // The untransformed URL is what goes into cart state, so each view can ask
+  // Cloudinary for the size it actually needs instead of reusing a fixed one.
   const fallbackImage = product.imageUrl || product.image || buildProductPlaceholder(product.name);
+  const cardImage = optimised(fallbackImage, 'productCard');
+
+  // Out of stock: disable the button instead of letting the customer fill a
+  // cart the server will reject at checkout.
+  const inStock = Number(product.stock) > 0;
 
   const handleAddToCart = () => {
+    if (!inStock) return;
     dispatch(addToCart({
       id: product._id,
       name: product.name,
       price: product.price,
       imageUrl: fallbackImage,
+      stock: Number(product.stock) || 0,
       qty: 1,
     }));
   };
@@ -48,9 +58,13 @@ const ProductCart = ({ product, hideImage = false }) => {
         <div className={`product-cart${hideImage ? ' product-cart--no-image' : ''}`}>
           {!hideImage && (
           <img
-            src={fallbackImage}
+            src={cardImage}
             alt={product.name}
             className="product-image"
+            loading="lazy"
+            decoding="async"
+            width={480}
+            height={480}
             onError={(e) => {
               e.currentTarget.onerror = null;
               e.currentTarget.src = buildProductPlaceholder(product.name);
@@ -63,7 +77,9 @@ const ProductCart = ({ product, hideImage = false }) => {
               <p className="product-price">₹{product.price.toFixed(2)}</p>
               <Link to={`/product/${product._id}`} className="product-details-link">View Details</Link>
             </div>
-            <button type="button" onClick={handleAddToCart} className="btn">Add to Cart</button>
+            <button type="button" onClick={handleAddToCart} className="btn" disabled={!inStock}>
+              {inStock ? 'Add to Cart' : 'Out of Stock'}
+            </button>
             </div>
         </div>
     );

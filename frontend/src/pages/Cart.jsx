@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { removeFromCart, updateQuantity, clearCart } from '../redux/cartSlice';
+import { optimised, SITE_LOGO } from '../utils/cloudinary';
 import '../styles/cart.css';
 
 const Cart = () => {
@@ -24,7 +25,7 @@ const Cart = () => {
           <div className="cart-items">
             {cartItems.map((item, index) => (
               <div key={item.id} className="cart-item" data-reveal style={{ '--reveal-delay': `${index * 80}ms` }}>
-                <img src={item.imageUrl || item.image} alt={item.name} className="cart-item-image" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/logo.png'; }} />
+                <img src={optimised(item.imageUrl || item.image, 'thumb')} alt={item.name} className="cart-item-image" loading="lazy" decoding="async" width={160} height={160} onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = SITE_LOGO; }} />
                 <div className="cart-item-info">
                   <h3>{item.name}</h3>
                   <p className="cart-item-price">₹{(item.price * item.qty).toFixed(2)}</p>

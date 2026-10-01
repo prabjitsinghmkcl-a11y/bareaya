@@ -1,3 +1,4 @@
+const fs = require('fs');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[6-9]\d{9}$/;
 const MONGO_ID_RE = /^[0-9a-fA-F]{24}$/;
@@ -169,6 +170,19 @@ const validateBody = (schema, { trim = false } = {}) => (req, res, next) => {
   next();
 };
 
+// Must be placed after multer and after validateBody. When validation rejects
+// the request, multer has already written the temp file to disk but the
+// controller never runs — so its own cleanup (fs.unlink after the Cloudinary
+// upload) never happens. Without this the file stays in uploads/ forever and is
+// publicly readable via express.static.
+const discardOrphanUpload = (req, res, next) => {
+  if (res.headersSent && req.file) {
+    fs.unlink(req.file.path, () => {});
+    return;
+  }
+  next();
+};
+
 // Validate route params (e.g. /:id) against a schema.
 const validateParams = (schema) => (req, res, next) => {
   const errors = [];
@@ -181,4 +195,4 @@ const validateParams = (schema) => (req, res, next) => {
   next();
 };
 
-module.exports = { validateBody, validateParams };
+module.exports = { validateBody, validateParams, discardOrphanUpload };

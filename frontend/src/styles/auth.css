@@ -57,35 +57,21 @@
 	cursor: not-allowed;
 }
 
-.auth-error {
+/* Scoped to .auth-form on purpose: the generic `.auth-form p` rule further
+   down has higher specificity (0-1-1) than a bare `.auth-error` (0-1-0) and
+   would otherwise win, rendering every OTP failure and success message grey. */
+.auth-form .auth-error {
 	color: #c0392b;
 	font-size: 0.9rem;
 	margin: 0;
 	text-align: center;
 }
 
-.auth-success {
+.auth-form .auth-success {
 	color: #1e8449;
 	font-size: 0.9rem;
 	margin: 0;
 	text-align: center;
-}
-
-.auth-info {
-	color: #555555;
-	font-size: 0.9rem;
-	margin: 0;
-	text-align: center;
-}
-
-.auth-form .btn-secondary {
-	background: #ffffff;
-	border: 1px solid #1d1d1d;
-	color: #1d1d1d;
-}
-
-.auth-form .btn-secondary:hover {
-	background: #f2f2f2;
 }
 
 .auth-form .link-btn {
@@ -108,25 +94,16 @@
 	opacity: 0.6;
 }
 
-.auth-redirect-btn {
-	background: #1d1d1d;
-	border-radius: 10px;
-	color: #ffffff;
-	font-size: 0.95rem;
-	padding: 11px 14px;
-	text-align: center;
-	text-decoration: none;
-}
-
-.auth-redirect-btn:hover {
-	background: #363636;
-}
-
 .auth-form p {
 	color: #666666;
 	font-size: 0.9rem;
 	margin: 4px 0 0;
 	text-align: center;
+}
+
+.auth-form p.auth-error,
+.auth-form p.auth-success {
+	margin: 4px 0 0;
 }
 
 .auth-form p a {
