@@ -69,13 +69,18 @@
 	aspect-ratio: 4 / 5;
 	display: block;
 	filter: saturate(0.82);
+	height: clamp(420px, 42vw, 700px);
 	object-fit: cover;
+	object-position: center 18%;
 	position: relative;
 	width: 100%;
 }
 
 .about-page > section:nth-of-type(2) > div > div:first-child {
+	justify-self: center;
+	max-width: 520px;
 	position: relative;
+	width: 100%;
 }
 
 .about-page > section:nth-of-type(2) > div > div:first-child::after {
@@ -87,6 +92,7 @@
 }
 
 .about-page > section:nth-of-type(2) img {
+	height: clamp(420px, 42vw, 700px);
 	position: relative;
 	z-index: 1;
 }

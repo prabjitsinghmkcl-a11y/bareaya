@@ -77,8 +77,11 @@ export const IMAGE_PRESETS = {
   thumb: { width: 160 },
   // product detail hero
   productDetail: { width: 900 },
-  // founder split-panel, full column width
-  founder: { width: 900 },
+  // founder split-panel, full column width. The upload is square (1280x1275)
+  // and the reference design relies on the face being framed tightly while the
+  // shoulders remain visible. Force face-aware cropping here so the portrait is
+  // centered on the subject instead of arbitrarily cutting through the head.
+  founder: { width: 900, height: 1125, crop: 'fill', gravity: 'faces' },
   // 3-up skin story cards
   skinStory: { width: 620 },
   // 3-up instagram grid
