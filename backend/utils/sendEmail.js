@@ -14,7 +14,14 @@ const getTransporter = () => {
       },
       pool: true,
       maxConnections: 5,
-      maxMessages: 100
+      maxMessages: 100,
+      // The mail host sits across the internet from the VPS, so a silent
+      // packet drop would otherwise leave a socket parked for the OS default
+      // (minutes) and eat a pooled connection. Fail fast instead — every caller
+      // treats a failure as non-fatal.
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000
     });
   }
   return transporter;

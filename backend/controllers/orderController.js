@@ -7,8 +7,7 @@ const { verifyRazorpaySignature, getRazorpayInstance } = require('./paymentContr
 const {
   decrementStock,
   restoreStock,
-  syncCustomerName,
-  sendConfirmationEmail,
+  runPostOrderSideEffects,
   finalizeRazorpayOrder
 } = require('../services/orderWorkflow');
 
@@ -143,10 +142,12 @@ const addOrderItems = async (req, res) => {
     codOrder.stockDeducted = true;
     const createdOrder = await codOrder.save();
 
-    await syncCustomerName(createdOrder);
-    await sendConfirmationEmail(createdOrder);
-
+    // Answer as soon as the order is durable — the name sync and the
+    // confirmation email run detached so the live site's SMTP latency cannot
+    // hold the customer on the checkout spinner.
     res.status(201).json(createdOrder);
+
+    runPostOrderSideEffects(createdOrder);
   } catch (error) {
     sendErrorResponse(res, error);
   }

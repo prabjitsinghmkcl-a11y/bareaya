@@ -110,20 +110,67 @@ const syncCustomerName = async (order) => {
   }
 };
 
-// Send the order confirmation email (guarded so failures never break the request).
+// Send the order confirmation email. Throws on failure so the background retry
+// below can tell a delivered mail from a dropped one — a silently swallowed
+// error would look identical to a successful send.
+const deliverConfirmationEmail = async (order) => {
+  const addr = order.address || {};
+  const customerEmail = addr.email;
+  if (!customerEmail) return;
+  await sendEmail({
+    email: customerEmail,
+    subject: 'Bareaya - Your order has been placed successfully',
+    html: buildConfirmationHtml(order)
+  });
+};
+
+// Guarded wrapper for callers that must never throw.
 const sendConfirmationEmail = async (order) => {
   try {
-    const addr = order.address || {};
-    const customerEmail = addr.email;
-    if (!customerEmail) return;
-    await sendEmail({
-      email: customerEmail,
-      subject: 'Bareaya - Your order has been placed successfully',
-      html: buildConfirmationHtml(order)
-    });
+    await deliverConfirmationEmail(order);
   } catch (error) {
     console.error('Order confirmation email failed:', error.message);
   }
+};
+
+const SIDE_EFFECT_ATTEMPTS = 3;
+const SIDE_EFFECT_RETRY_MS = 2000;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Post-order side effects (customer-name sync + confirmation email), detached
+ * from the request.
+ *
+ * By the time this is called the order is saved and its stock is already
+ * reserved, so the response does not depend on any of it. The SMTP round trip
+ * to the production host routinely costs seconds (TLS handshake, auth, DATA)
+ * while on localhost it fails or completes instantly — awaiting it inline is
+ * what made checkout feel slow on the live site. Detached, the checkout
+ * responds as soon as the order exists and the mail still goes out, retried a
+ * few times in the background because SMTP can drop transiently.
+ */
+const runPostOrderSideEffects = (order) => {
+  setImmediate(async () => {
+    try {
+      await syncCustomerName(order);
+    } catch (error) {
+      console.error('Syncing customer name failed:', error.message);
+    }
+
+    for (let attempt = 1; attempt <= SIDE_EFFECT_ATTEMPTS; attempt += 1) {
+      try {
+        await deliverConfirmationEmail(order);
+        return;
+      } catch (error) {
+        console.error(
+          `Order confirmation email failed (attempt ${attempt}/${SIDE_EFFECT_ATTEMPTS}) for order ${order._id}:`,
+          error.message
+        );
+        if (attempt < SIDE_EFFECT_ATTEMPTS) await wait(SIDE_EFFECT_RETRY_MS * attempt);
+      }
+    }
+  });
 };
 
 /**
@@ -164,8 +211,7 @@ const finalizeRazorpayOrder = async ({ razorpayOrderId, paymentId }) => {
     await claimed.save();
   }
 
-  await syncCustomerName(claimed);
-  await sendConfirmationEmail(claimed);
+  runPostOrderSideEffects(claimed);
 
   return { order: claimed, found: true, alreadyFinalized: false };
 };
@@ -176,5 +222,6 @@ module.exports = {
   restoreStock,
   syncCustomerName,
   sendConfirmationEmail,
+  runPostOrderSideEffects,
   finalizeRazorpayOrder
 };
