@@ -36,12 +36,26 @@ const addOrderItems = async (req, res) => {
       // Scope the intent lookup to the authenticated user as well as the id. The
       // signature check above already binds razorpayOrderId to our secret, but
       // every other order query here is ownership-scoped, so this one must be too.
+      //
+      // Deliberately NOT filtered on status. The Razorpay webhook usually flips
+      // the intent to `paid` BEFORE this browser callback runs; a lookup that
+      // only matched `pending` would then miss the intent, fall through to the
+      // create-fallback below, and produce a SECOND order for the same payment —
+      // the duplicate "one pending + one paid" pair the admin panel shows.
       let intent = await Order.findOne({
         razorpayOrderId,
         userId: req.user._id,
-        paymentMethod: 'razorpay',
-        status: 'pending'
+        paymentMethod: 'razorpay'
       });
+
+      if (intent && intent.status !== 'pending') {
+        // Already finalized by the webhook (or a concurrent callback). Return it
+        // idempotently instead of spawning a duplicate order.
+        if (intent.status === 'cancelled') {
+          return res.status(400).json({ message: 'This order was cancelled.' });
+        }
+        return res.status(200).json(intent);
+      }
 
       if (!intent) {
         // Fallback for orders whose intent was never saved (e.g. created a
