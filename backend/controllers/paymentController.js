@@ -98,11 +98,20 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+// Razorpay issues a dedicated webhook signing secret (Account & Settings ->
+// Webhooks), which is NOT the same as the API key secret. Prefer it, and fall
+// back to the key secret for accounts that were set up with the key secret as
+// the webhook secret. Must be called with req.rawBody (Buffer) available.
+const getWebhookSecret = () =>
+  process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+
 // Webhook signature is an HMAC-SHA256 of the RAW request body using the
-// razorpay key secret. Must be called with req.rawBody (Buffer) available.
+// webhook signing secret.
 const verifyWebhookSignature = (rawBody, signature) => {
+  const secret = getWebhookSecret();
+  if (!secret) return false;
   const expected = crypto
-    .createHmac('sha256', String(process.env.RAZORPAY_KEY_SECRET))
+    .createHmac('sha256', String(secret))
     .update(String(rawBody))
     .digest('hex');
   const provided = String(signature || '');
