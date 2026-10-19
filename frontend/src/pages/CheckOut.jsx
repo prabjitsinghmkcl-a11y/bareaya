@@ -302,17 +302,23 @@ const [paymentMethod, setPaymentMethod] = useState('razorpay');
     return true;
   };
 
+  // Every step change starts from the top of the page. On mobile the CTA sits
+  // far below the new panel, so without this the fresh step's header (and the
+  // stepper) would be off-screen right after tapping Continue.
+  const goToStep = (nextStep) => {
+    if (nextStep !== step) {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
+    }
+    setStep(nextStep);
+  };
+
   // Forward jumps re-validate the address, so payment is unreachable with an
   // incomplete address; backward jumps are always free.
   const advanceTo = (nextStep) => {
-    if (nextStep <= step) {
-      setError('');
-      setStep(nextStep);
-      return;
-    }
-    if (!validateForm()) return;
+    if (nextStep > step && !validateForm()) return;
     setError('');
-    setStep(nextStep);
+    goToStep(nextStep);
   };
 
   const handleRemoveItem = (id) => dispatch(removeFromCart(id));
@@ -321,7 +327,7 @@ const [paymentMethod, setPaymentMethod] = useState('razorpay');
     <div className="checkout-address-card">
       <div className="checkout-address-head">
         <span>Deliver to</span>
-        <button type="button" className="checkout-link-btn" onClick={() => setStep(1)}>Change</button>
+        <button type="button" className="checkout-link-btn" onClick={() => goToStep(1)}>Change</button>
       </div>
       <p>
         <strong>{[billing.firstName, billing.lastName].filter(Boolean).join(' ')}</strong>
@@ -906,7 +912,7 @@ handler: handlePaymentSuccess,
           </div>
 
           <div className="checkout-step-actions checkout-step-actions-split">
-            <button type="button" className="btn btn-ghost" onClick={() => setStep(1)}>Back to Address</button>
+            <button type="button" className="btn btn-ghost" onClick={() => goToStep(1)}>Back to Address</button>
             <button type="button" className="btn" onClick={() => advanceTo(3)}>Continue to Payment</button>
           </div>
         </section>
@@ -957,7 +963,7 @@ handler: handlePaymentSuccess,
           </div>
 
           <div className="checkout-step-actions checkout-step-actions-split">
-            <button type="button" className="btn btn-ghost" onClick={() => setStep(2)}>Back to Order Summary</button>
+            <button type="button" className="btn btn-ghost" onClick={() => goToStep(2)}>Back to Order Summary</button>
             <button type="button" className="btn" onClick={handlePlaceOrder} disabled={loading || paymentOpen}>
               {loading
                 ? 'Processing...'
