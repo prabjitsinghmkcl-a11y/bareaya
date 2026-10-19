@@ -299,18 +299,6 @@ const OrderTrack = () => {
                     : 'Paid'}
                 </dd>
               </div>
-              {order.paymentId && (
-                <div>
-                  <dt>Payment ID</dt>
-                  <dd className="ot-mono">{order.paymentId}</dd>
-                </div>
-              )}
-              {order.razorpayOrderId && (
-                <div>
-                  <dt>Gateway order</dt>
-                  <dd className="ot-mono">{order.razorpayOrderId}</dd>
-                </div>
-              )}
               {order.orderNotes && (
                 <div>
                   <dt>Order notes</dt>
