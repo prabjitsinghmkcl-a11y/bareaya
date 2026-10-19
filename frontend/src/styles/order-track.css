@@ -237,10 +237,8 @@
 }
 
 .ot-step.is-active .ot-step-dot {
-	animation: ot-spin 0.9s linear infinite;
 	background: #ffffff;
-	border-color: #e3ded6;
-	border-top-color: #7a5c3c;
+	border-color: #7a5c3c;
 	border-width: 3px;
 }
 
@@ -289,10 +287,6 @@
 	border-color: #eceae4;
 	color: transparent;
 	filter: grayscale(1);
-}
-
-@keyframes ot-spin {
-	to { transform: rotate(360deg); }
 }
 
 /* Grid ------------------------------------------------- */
