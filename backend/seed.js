@@ -5,7 +5,6 @@ const connectDB = require('./config/db');
 const User = require('./model/User');
 const Product = require('./model/Product');
 const Order = require('./model/Order');
-
 dotenv.config();
 
 if (process.env.NODE_ENV === 'production') {
