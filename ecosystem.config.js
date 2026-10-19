@@ -12,7 +12,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 5000,
-        FRONTEND_URL: 'https://bareya.in'
+        FRONTEND_URL: 'https://bareaya.in'
       }
     }
   ]

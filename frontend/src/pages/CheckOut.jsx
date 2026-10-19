@@ -33,11 +33,34 @@ const loadRazorpayScript = () => {
   });
 };
 
+// A 401 from any order/payment endpoint means the stored login token is dead
+// (expired, or the server's JWT secret changed). Kept distinct from ordinary
+// errors so checkout can bounce the customer to the login screen — with the
+// cart intact — instead of dead-ending on the raw "token failed" message.
+class SessionExpiredError extends Error {
+  constructor(message = 'Your session has expired. Please log in again to continue your order.') {
+    super(message);
+    this.name = 'SessionExpiredError';
+  }
+}
+
+// Best-effort LOCAL expiry check so a stale session is caught BEFORE the
+// Razorpay modal opens. Returns null when the token can't be parsed — the
+// server remains the authority in every case.
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
+  } catch {
+    return null;
+  }
+};
+
 const Checkout = () => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login, logout } = useContext(AuthContext);
 
   const [billing, setBilling] = useState({
     firstName: '',
@@ -104,6 +127,14 @@ const [paymentMethod, setPaymentMethod] = useState('razorpay');
   // is recoverable: refresh the cart and tell them what changed, instead of
   // leaving a dead 400 with no forward path.
   const handleOrderError = (err) => {
+    // Dead/expired login token. Clear the stale session and send the customer
+    // to login — the cart survives (localStorage), so after OTP they can come
+    // straight back and complete the order.
+    if (err?.name === 'SessionExpiredError') {
+      logout();
+      navigate('/login', { state: { from: '/checkout', message: err.message } });
+      return;
+    }
     const message = err?.message || 'Something went wrong. Please try again.';
     if (/does not match|no longer available|available in your cart|limited stock/i.test(message)) {
       setPricingStale(true);
@@ -179,8 +210,18 @@ const [paymentMethod, setPaymentMethod] = useState('razorpay');
     return true;
   };
 
+  // Every order/payment call answers 401 when the token is dead. Translate that
+  // into SessionExpiredError so handleOrderError can route the customer to
+  // login instead of showing the raw server string.
+  const requireAuth = () => {
+    if (!authToken) throw new SessionExpiredError('Please log in to place an order.');
+    if (isTokenExpired(authToken)) {
+      throw new SessionExpiredError('Your session has expired. Please log in again to continue your order.');
+    }
+  };
+
   const createRazorpayOrder = async () => {
-    if (!authToken) throw new Error('Please log in to place an order.');
+    requireAuth();
     const res = await fetch('/api/payment/order', {
       method: 'POST',
       headers: {
@@ -193,13 +234,14 @@ const [paymentMethod, setPaymentMethod] = useState('razorpay');
         orderNotes: orderNotes.trim()
       })
     });
+    if (res.status === 401) throw new SessionExpiredError();
     const data = await res.json();
     if (!res.ok || !data.id) throw new Error(data.message || 'Could not create payment order.');
     return data;
   };
 
 const verifyPayment = async (paymentData) => {
-    if (!authToken) throw new Error('Please log in to place an order.');
+    requireAuth();
     const res = await fetch('/api/payment/verify', {
       method: 'POST',
       headers: {
@@ -208,12 +250,14 @@ const verifyPayment = async (paymentData) => {
       },
       body: JSON.stringify(paymentData)
     });
+    if (res.status === 401) throw new SessionExpiredError();
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Payment verification failed.');
     return data;
   };
 
   const createOrder = async (paymentId = '', method, razorpayOrderId = '', razorpaySignature = '') => {
+    requireAuth();
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: {
@@ -236,6 +280,7 @@ const verifyPayment = async (paymentData) => {
         razorpaySignature: paymentId ? razorpaySignature || '' : ''
       })
     });
+    if (res.status === 401) throw new SessionExpiredError();
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.message || 'Order could not be placed. Please contact support.');
@@ -361,6 +406,10 @@ handler: handlePaymentSuccess,
       modalOpened = true;
       razorpay.open();
     } catch (err) {
+      if (err?.name === 'SessionExpiredError') {
+        handleOrderError(err);
+        return;
+      }
       setError(err.message || 'Could not start payment. Please try again.');
     } finally {
       // Only clear the pre-modal spinner here. Once the modal is open the
@@ -380,13 +429,26 @@ handler: handlePaymentSuccess,
     );
   }
 
-  if (!authToken) {
+  // An expired token is as good as no token: the server will reject every
+  // order call. Catch it HERE so the customer is sent to login before filling
+  // the whole billing form, not after.
+  const tokenExpired = authToken && isTokenExpired(authToken);
+
+  if (!authToken || tokenExpired) {
     return (
       <div className="checkout-empty">
         <h1 data-reveal>Checkout</h1>
-        <p data-reveal style={{ '--reveal-delay': '100ms' }}>You need to be logged in to place an order.</p>
+        <p data-reveal style={{ '--reveal-delay': '100ms' }}>
+          {tokenExpired
+            ? 'Your session has expired. Please log in again — your cart is saved.'
+            : 'You need to be logged in to place an order.'}
+        </p>
         <div className="checkout-auth-actions" data-reveal style={{ '--reveal-delay': '200ms' }}>
-          <Link to="/login" className="btn">Login</Link>
+          <Link
+            to="/login"
+            state={tokenExpired ? { from: '/checkout', message: 'Your session has expired. Please log in again to continue your order.' } : undefined}
+            className="btn"
+          >Login</Link>
           <Link to="/shop" className="btn btn-ghost">Back to Shop</Link>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import '../styles/auth.css';
 
@@ -8,14 +8,19 @@ const RESEND_COOLDOWN = 30;
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
+  // When checkout bounces an expired session here, keep the message AND the
+  // return path so the customer lands back on /checkout after the OTP instead
+  // of having to find their way manually.
+  const redirectState = location.state || {};
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(redirectState.message || '');
   const [resendIn, setResendIn] = useState(0);
   const timerRef = useRef(null);
 
@@ -72,7 +77,10 @@ const Login = () => {
       });
       const data = await res.json();
       if (res.ok && data.token) {
-        login(data); navigate('/cart');
+        login(data);
+        // Return to where the session-expiry bounce came from (e.g. checkout)
+        // instead of always dumping the customer on /cart.
+        navigate(redirectState.from || '/cart', { replace: true });
       } else {
         setError(data.message || 'Invalid OTP.');
       }
