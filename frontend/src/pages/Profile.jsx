@@ -157,6 +157,9 @@ const Profile = () => {
                     {cancellingId === order._id ? 'Cancelling...' : 'Cancel Order'}
                   </button>
                 )}
+                <Link className="profile-track" to={`/orders/${order._id}`}>
+                  View &amp; track details <span aria-hidden="true">→</span>
+                </Link>
               </div>
             </div>
             );

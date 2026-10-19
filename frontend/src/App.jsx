@@ -19,6 +19,7 @@ const Login = lazy(() => import('./pages/Login'));
 const ProductDetails = lazy(() => import('./pages/ProductDetails'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Checkout = lazy(() => import('./pages/CheckOut'));
+const OrderTrack = lazy(() => import('./pages/OrderTrack'));
 const Profile = lazy(() => import('./pages/Profile'));
 
 // The whole admin surface is split out. Customers never touch these chunks, so
@@ -81,6 +82,7 @@ const CustomerApp = () => (
         <Route path="/shop" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/orders/:id" element={<OrderTrack />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -12,6 +12,7 @@ import {
   X,
   Leaf
 } from 'lucide-react';
+import AdminOrderToasts from './AdminOrderToasts';
 import '../styles/admin-dashboard.css';
 
 const NAV_ITEMS = [
@@ -94,6 +95,9 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Live "new order received" popups over every admin screen. */}
+      <AdminOrderToasts />
     </div>
   );
 };

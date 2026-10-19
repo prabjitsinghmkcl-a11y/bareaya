@@ -262,6 +262,18 @@
 	opacity: 0.6;
 }
 
+.profile-track {
+	color: var(--profile-brown, #8b5e3c);
+	font-size: 0.8rem;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.profile-track:hover {
+	color: var(--profile-ink, #263020);
+	text-decoration: underline;
+}
+
 @media (max-width: 560px) {
 	.profile-container {
 		border-radius: 0;

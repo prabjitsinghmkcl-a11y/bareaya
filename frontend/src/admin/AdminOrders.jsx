@@ -1,9 +1,22 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import { adminFetch, resolveAdminError } from '../utils/adminApi';
 import '../styles/admin.css';
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// The customer sees a staged progress animation while their order is placed;
+// mirroring that here, admin status changes run through the same kind of
+// sequence — a running stage, then a green confirmation card with the message
+// that matches the transition.
+const STATUS_FLOW = {
+  paid: { run: 'Confirming your order…', done: 'Order confirmed' },
+  shipped: { run: 'Marking as shipped…', done: 'Order is on its way' },
+  delivered: { run: 'Marking as delivered…', done: 'Order delivered' },
+  cancelled: { run: 'Cancelling the order…', done: 'Order cancelled' }
+};
 
 // Which status each order may move to next. The server enforces the same rules
 // and rejects anything not listed here, so the dropdown cannot offer a
@@ -30,6 +43,10 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  // null when idle, otherwise { status, stage } — stage 0 = running spinner,
+  // stage 1 = green success card, exactly like the customer's checkout flow.
+  const [statusFlow, setStatusFlow] = useState(null);
+  const location = useLocation();
 
   useEffect(() => {
     if (user) setUserInfo(user);
@@ -56,10 +73,19 @@ const AdminOrders = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userInfo, navigate]);
 
+  // The "new order received" toast hands its order over here — open that
+  // order's row so the admin lands straight on it.
+  useEffect(() => {
+    const highlight = location.state && location.state.highlightId;
+    if (highlight) setExpandedId(highlight);
+  }, [location.state]);
+
   if (!userInfo || userInfo.role !== 'admin') return null;
 
   const handleStatusChange = async (orderId, status) => {
     setError('');
+    const started = Date.now();
+    setStatusFlow({ status, stage: 0 });
     try {
       await adminFetch(`/api/orders/${orderId}/status`, {
         token: userInfo.token,
@@ -67,7 +93,15 @@ const AdminOrders = () => {
         body: { status }
       });
       setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status } : o)));
+      // Minimum beat so the running stage is perceivable, then the green
+      // confirmation card — the admin-side mirror of the customer animation.
+      const elapsed = Date.now() - started;
+      if (elapsed < 650) await sleep(650 - elapsed);
+      setStatusFlow({ status, stage: 1 });
+      await sleep(1400);
+      setStatusFlow(null);
     } catch (err) {
+      setStatusFlow(null);
       setError(resolveAdminError(err, logout, navigate) || '');
       // The server may have refused the transition; re-read the real status.
       if (err?.name !== 'SessionExpiredError') fetchOrders();
@@ -194,7 +228,7 @@ const AdminOrders = () => {
                     value={order.status || 'pending'}
                     onChange={(e) => handleStatusChange(order._id, e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    disabled={(ALLOWED_NEXT_STATUS[order.status] || []).length === 0}
+                    disabled={Boolean(statusFlow) || (ALLOWED_NEXT_STATUS[order.status] || []).length === 0}
                   >
                     {/* The current status stays as a disabled placeholder so the
                         control still renders its value, followed by only the
@@ -210,6 +244,28 @@ const AdminOrders = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Staged status-change animation: running spinner, then the green
+          confirmation card ("Order confirmed", "Order delivered", …). */}
+      {statusFlow && (
+        <div className="admin-status-overlay" role="status" aria-live="polite">
+          <div className="admin-status-card">
+            {statusFlow.stage === 0 ? (
+              <>
+                <span className="admin-status-ring" aria-hidden="true" />
+                <h3>{(STATUS_FLOW[statusFlow.status] || {}).run || 'Saving order update…'}</h3>
+                <p>Please wait while this order is updated.</p>
+              </>
+            ) : (
+              <>
+                <span className="admin-status-check" aria-hidden="true">✓</span>
+                <h3>{(STATUS_FLOW[statusFlow.status] || {}).done || 'Order updated'}</h3>
+                <p>The customer's tracking page now reflects this status.</p>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

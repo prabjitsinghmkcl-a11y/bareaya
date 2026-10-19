@@ -167,6 +167,24 @@ const addOrderItems = async (req, res) => {
   }
 };
 
+// A customer opening their order confirmation / tracking page needs ONE order
+// (the list endpoint would re-send the whole history). Ownership-scoped: only
+// the buyer — or an admin — may read it.
+const getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    if (order.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'You can only view your own orders' });
+    }
+    res.json(order);
+  } catch (error) {
+    sendErrorResponse(res, error);
+  }
+};
+
 const myorders = async (req, res) => {
   try {
     const orders = await Order.find({ userId: req.user._id });
@@ -305,4 +323,4 @@ const cancelOrder = async (req, res) => {
   }
 };
 
-module.exports = { addOrderItems, myorders, getOrders, updateOrderStatus, cancelOrder };
+module.exports = { addOrderItems, myorders, getOrderById, getOrders, updateOrderStatus, cancelOrder };
