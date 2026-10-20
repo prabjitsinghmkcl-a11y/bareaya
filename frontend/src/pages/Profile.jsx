@@ -8,7 +8,6 @@ const Profile = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [cancellingId, setCancellingId] = useState('');
   const [error, setError] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -50,29 +49,6 @@ const Profile = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
-  };
-
-  const canCancel = (status) => ['pending', 'paid'].includes(status);
-
-  const handleCancel = async (orderId) => {
-    setCancellingId(orderId);
-    try {
-      const res = await fetch(`/api/orders/${orderId}/cancel`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${user.token}` }
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setError(data.message || 'Could not cancel the order. Please try again.');
-        return;
-      }
-      setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status: 'cancelled' } : o)));
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
-      console.error(err);
-    } finally {
-      setCancellingId('');
-    }
   };
 
   if (!user) return null;
@@ -148,15 +124,6 @@ const Profile = () => {
                 <span className="profile-order-status" style={{ background: statusColor.bg, color: statusColor.color }}>
                   {statusLabel}
                 </span>
-                {canCancel(order.status) && (
-                  <button
-                    className="profile-cancel"
-                    onClick={() => handleCancel(order._id)}
-                    disabled={cancellingId === order._id}
-                  >
-                    {cancellingId === order._id ? 'Cancelling...' : 'Cancel Order'}
-                  </button>
-                )}
                 <Link className="profile-track" to={`/orders/${order._id}`}>
                   View &amp; track details <span aria-hidden="true">→</span>
                 </Link>

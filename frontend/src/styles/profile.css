@@ -70,7 +70,6 @@
 }
 
 .profile-logout,
-.profile-cancel,
 .profile-action {
 	border-radius: 9px;
 	cursor: pointer;
@@ -242,24 +241,6 @@
 	font-weight: 700;
 	padding: 4px 12px;
 	text-transform: capitalize;
-}
-
-.profile-cancel {
-	background: transparent;
-	border: 1px solid rgba(239, 68, 68, 0.45);
-	color: #f87171;
-	padding: 8px 13px;
-}
-
-.profile-cancel:hover:not(:disabled) {
-	background: #ef4444;
-	color: #ffffff;
-	transform: translateY(-2px);
-}
-
-.profile-cancel:disabled {
-	cursor: wait;
-	opacity: 0.6;
 }
 
 .profile-track {

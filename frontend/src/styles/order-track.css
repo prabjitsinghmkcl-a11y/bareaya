@@ -455,6 +455,37 @@
 	color: #1d1d1d;
 }
 
+.ot-cancel-btn {
+	background: #ffffff;
+	border: 1px solid #e3aca2;
+	border-radius: 9px;
+	color: #c0392b;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.88rem;
+	font-weight: 700;
+	margin-top: 12px;
+	padding: 10px 14px;
+	transition: background-color 160ms ease, border-color 160ms ease;
+	width: 100%;
+}
+
+.ot-cancel-btn:hover:not(:disabled) {
+	background: #fef5f3;
+	border-color: #d78a7c;
+}
+
+.ot-cancel-btn:disabled {
+	cursor: wait;
+	opacity: 0.6;
+}
+
+.ot-cancel-error {
+	color: #c0392b;
+	font-size: 0.8rem;
+	margin: 8px 0 0;
+}
+
 /* Actions ---------------------------------------------- */
 .ot-actions {
 	display: flex;

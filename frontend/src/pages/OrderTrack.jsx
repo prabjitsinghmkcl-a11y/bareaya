@@ -69,7 +69,9 @@ const OrderTrack = () => {
   const [images, setImages] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
+  const [cancelError, setCancelError] = useState('');
 
   const justPlaced = Boolean(location.state?.justPlaced);
 
@@ -132,6 +134,40 @@ const OrderTrack = () => {
     return () => clearInterval(timer);
   }, [user, order, fetchOrder]);
 
+  // Customer-side cancellation. The server re-checks ownership + status, so a
+  // stale button (order already shipped) just surfaces its message inline.
+  const handleCancel = async () => {
+    if (cancelling) return;
+    if (!window.confirm('Cancel this order? This cannot be undone.')) return;
+    setCancelling(true);
+    setCancelError('');
+    try {
+      const res = await fetch(`/api/orders/${order._id}/cancel`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${user.token}` }
+      });
+      if (res.status === 401) {
+        logout();
+        navigate('/login', {
+          state: {
+            from: `/orders/${id}`,
+            message: 'Your session has expired. Please log in again to manage your order.'
+          }
+        });
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Could not cancel this order. Please try again.');
+      // The endpoint returns the updated document — the banner, greyed timeline
+      // and Cancelled badge all follow from its status with no extra state.
+      setOrder(data);
+    } catch (err) {
+      setCancelError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   if (!user) return null;
 
   if (loading && !order) {
@@ -177,6 +213,9 @@ const OrderTrack = () => {
   const cancelled = order.status === 'cancelled';
   const address = order.address || {};
   const isCod = order.paymentMethod === 'cod';
+  // Customers may cancel only what the store hasn't shipped yet — the server
+  // enforces the same ['pending', 'paid'] rule.
+  const canCancel = ['pending', 'paid'].includes(order.status);
 
   return (
     <div className="ot-page">
@@ -328,7 +367,19 @@ const OrderTrack = () => {
             <h2>Need help?</h2>
             <p className="ot-help-text">Questions about your order? We're here to help.</p>
             <Link className="ot-card-link" to="/contact">Contact us <span aria-hidden="true">→</span></Link>
-            <Link className="ot-card-link" to="/profile">View all your orders <span aria-hidden="true">→</span></Link>
+            {canCancel ? (
+              <button
+                type="button"
+                className="ot-cancel-btn"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel Order'}
+              </button>
+            ) : (
+              <Link className="ot-card-link" to="/profile">View all your orders <span aria-hidden="true">→</span></Link>
+            )}
+            {cancelError && <p className="ot-cancel-error" role="alert">{cancelError}</p>}
           </section>
         </aside>
       </div>
