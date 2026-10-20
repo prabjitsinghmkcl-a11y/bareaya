@@ -608,31 +608,45 @@
 
 	.ot-timeline {
 		flex-direction: column;
-		gap: 4px;
+		gap: 0;
 	}
 
-	.ot-step {
-		flex: none;
-	}
-
+	.ot-step,
 	.ot-step:last-child {
+		align-items: flex-start;
 		flex: none;
+		gap: 12px;
+		padding-bottom: 10px;
 	}
 
+	/* Desktop's connector runs horizontally between two dots. In the stacked
+	   layout it becomes a vertical rail drawn on the step itself (not as the
+	   flex child it used to be, which floated between the dot and the text)
+	   so it always starts under the dot and reaches the next one. */
 	.ot-step-line {
-		height: auto;
-		margin: 6px 0 6px 12px;
-		min-height: 22px;
-		min-width: 2px;
+		display: none;
+	}
+
+	.ot-step:not(:last-child)::before {
+		background: #eceae4;
+		bottom: 0;
+		content: '';
+		left: 12px;
+		position: absolute;
+		top: 30px;
 		width: 2px;
 	}
 
-	.ot-step-body {
-		padding-bottom: 8px;
+	.ot-step.is-done:not(:last-child)::before {
+		background: #1e8e3e;
 	}
 
-	.ot-step:last-child .ot-step-line {
-		display: none;
+	.ot-timeline-cancelled .ot-step::before {
+		background: #eceae4;
+	}
+
+	.ot-card-head {
+		flex-wrap: wrap;
 	}
 }
 
@@ -666,6 +680,16 @@
 
 	.ot-actions .ot-btn {
 		flex: 1 1 auto;
+	}
+
+	/* Footer CTAs stack full-width — two pills side by side are unusably
+	   cramped on small phones. */
+	.ot-actions-footer {
+		flex-direction: column;
+	}
+
+	.ot-actions-footer .ot-btn {
+		width: 100%;
 	}
 }
 
