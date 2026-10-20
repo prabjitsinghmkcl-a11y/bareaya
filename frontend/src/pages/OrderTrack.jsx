@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import { optimised, SITE_LOGO } from '../utils/cloudinary';
+import { fetchProductImages } from '../utils/productImages';
 import '../styles/order-track.css';
 
 // The customer-facing tracking milestones. Backed by the real status enum
@@ -29,24 +30,6 @@ const STATUS_META = {
   shipped: { label: 'Shipped', bg: 'rgba(59,130,246,0.12)', color: '#1d4ed8' },
   delivered: { label: 'Delivered', bg: 'rgba(16,185,129,0.12)', color: '#047857' },
   cancelled: { label: 'Cancelled', bg: 'rgba(239,68,68,0.12)', color: '#dc2626' }
-};
-
-// Order items only store productId, so thumbnails are resolved against the
-// public product list. Cached for the session so revisits don't refetch it.
-let productImageCache = null;
-const fetchProductImages = async () => {
-  if (productImageCache) return productImageCache;
-  try {
-    const res = await fetch('/api/products');
-    const data = await res.json();
-    productImageCache = Array.isArray(data)
-      ? new Map(data.map((p) => [p._id, p.imageUrl || p.image || '']))
-      : new Map();
-  } catch {
-    // Negative cache: a failed lookup must not restart on every render.
-    productImageCache = new Map();
-  }
-  return productImageCache;
 };
 
 const formatDate = (value, withTime = false) => {
@@ -377,7 +360,7 @@ const OrderTrack = () => {
                 {cancelling ? 'Cancelling…' : 'Cancel Order'}
               </button>
             ) : (
-              <Link className="ot-card-link" to="/profile">View all your orders <span aria-hidden="true">→</span></Link>
+              <Link className="ot-card-link" to="/profile" state={{ tab: 'orders' }}>View all your orders <span aria-hidden="true">→</span></Link>
             )}
             {cancelError && <p className="ot-cancel-error" role="alert">{cancelError}</p>}
           </section>
@@ -386,7 +369,7 @@ const OrderTrack = () => {
 
       <div className="ot-actions ot-actions-footer" data-reveal style={{ '--reveal-delay': '280ms' }}>
         <Link to="/shop" className="ot-btn">Continue Shopping</Link>
-        <Link to="/profile" className="ot-btn ot-btn-ghost">Track all orders</Link>
+        <Link to="/profile" state={{ tab: 'orders' }} className="ot-btn ot-btn-ghost">Track all orders</Link>
       </div>
     </div>
   );
