@@ -208,10 +208,13 @@ const getOrders = async (req, res) => {
 // Which status changes an admin is allowed to make. Anything not listed is
 // rejected, so a cancelled order can never be silently un-cancelled (which
 // would ship goods whose stock had already been returned) and a delivered
-// order can never be sent back to pending.
+// order can never be sent back to pending. Forward jumps are fine: the admin
+// may mark an order shipped or delivered straight from any earlier stage,
+// matching the customer's tracking milestones, while backwards moves and
+// un-cancelling stay forbidden.
 const ALLOWED_STATUS_TRANSITIONS = {
-  pending: ['paid', 'cancelled'],
-  paid: ['shipped', 'cancelled'],
+  pending: ['paid', 'shipped', 'delivered', 'cancelled'],
+  paid: ['shipped', 'delivered', 'cancelled'],
   shipped: ['delivered'],
   delivered: [],
   cancelled: []

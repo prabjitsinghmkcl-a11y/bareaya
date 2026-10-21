@@ -26,7 +26,7 @@ const STATUS_PROGRESS = {
 
 const STATUS_META = {
   pending: { label: 'Order Placed', bg: 'rgba(245,158,11,0.12)', color: '#b45309' },
-  paid: { label: 'Payment Confirmed', bg: 'rgba(16,185,129,0.12)', color: '#047857' },
+  paid: { label: 'Order Confirmed', bg: 'rgba(16,185,129,0.12)', color: '#047857' },
   shipped: { label: 'Shipped', bg: 'rgba(59,130,246,0.12)', color: '#1d4ed8' },
   delivered: { label: 'Delivered', bg: 'rgba(16,185,129,0.12)', color: '#047857' },
   cancelled: { label: 'Cancelled', bg: 'rgba(239,68,68,0.12)', color: '#dc2626' }
@@ -231,7 +231,7 @@ const OrderTrack = () => {
             onClick={() => fetchOrder(true)}
             disabled={refreshing}
           >
-            {refreshing ? 'Refreshing…' : 'Refresh status'}
+            {refreshing ? 'Updating…' : 'Refresh status'}
           </button>
         </div>
         <ol className={`ot-timeline${cancelled ? ' ot-timeline-cancelled' : ''}`}>

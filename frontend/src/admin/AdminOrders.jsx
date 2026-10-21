@@ -21,12 +21,25 @@ const STATUS_FLOW = {
 // Which status each order may move to next. The server enforces the same rules
 // and rejects anything not listed here, so the dropdown cannot offer a
 // transition that is guaranteed to fail (e.g. un-cancelling a cancelled order).
+// Forward jumps are allowed (pending → shipped, paid → delivered, …) so an
+// order can be moved ahead in one click; backwards moves are never valid.
 const ALLOWED_NEXT_STATUS = {
-  pending: ['paid', 'cancelled'],
-  paid: ['shipped', 'cancelled'],
+  pending: ['paid', 'shipped', 'delivered', 'cancelled'],
+  paid: ['shipped', 'delivered', 'cancelled'],
   shipped: ['delivered'],
   delivered: [],
   cancelled: []
+};
+
+// Same wording as the customer's tracking timeline, so the admin picks
+// "Order Confirmed" / "Shipped" / "Delivered" exactly as the shopper reads
+// them on the order tracking page instead of the raw enum values.
+const STATUS_LABELS = {
+  pending: 'Order Placed',
+  paid: 'Order Confirmed',
+  shipped: 'Shipped',
+  delivered: 'Delivered',
+  cancelled: 'Cancelled'
 };
 
 const AdminOrders = () => {
@@ -216,7 +229,7 @@ const AdminOrders = () => {
                     <div className="admin-order-block">
                       <h4>Order info</h4>
                       <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Payment:</strong> {order.paymentMethod || '—'} {order.paymentId ? `(${order.paymentId})` : ''}</p>
-                      <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Status:</strong> {order.status || '—'}</p>
+                      <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Status:</strong> {STATUS_LABELS[order.status] || order.status || '—'}</p>
                       {order.orderNotes ? <p className="admin-row-sub"><strong style={{ color: '#fff' }}>Notes:</strong> {order.orderNotes}</p> : null}
                     </div>
                   </div>
@@ -232,12 +245,13 @@ const AdminOrders = () => {
                   >
                     {/* The current status stays as a disabled placeholder so the
                         control still renders its value, followed by only the
-                        transitions the server accepts. */}
+                        transitions the server accepts — worded exactly like the
+                        customer's tracking timeline. */}
                     <option value={order.status || 'pending'} disabled>
-                      {order.status || 'pending'}
+                      {STATUS_LABELS[order.status] || order.status || 'Order Placed'}
                     </option>
                     {(ALLOWED_NEXT_STATUS[order.status] || []).map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>{STATUS_LABELS[s] || s}</option>
                     ))}
                   </select>
                 </div>
