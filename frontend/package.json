@@ -20,6 +20,7 @@
     "start:admin": "set \"PORT=4000\"&& set \"REACT_APP_ADMIN_ONLY=true\"&& react-scripts start",
     "build": "react-scripts build",
     "build:admin": "set \"REACT_APP_ADMIN_ONLY=true\"&& react-scripts build",
+    "build:both": "node scripts/build-both.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

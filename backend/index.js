@@ -53,6 +53,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const connectDB = require('./config/db');
 const path = require('path');
+const fs = require('fs');
 const { config: rateConfig } = require('./config/rateLimit');
 
 
@@ -160,41 +161,79 @@ app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
+// Hosts from which the admin panel may be loaded. Everything else — the
+// public bareaya.in domain, www, the raw onrender.com origin — gets a hard
+// 404 on every /admin path, so scanners, link previews and curious visitors
+// never even reach a login screen. Override with the ADMIN_HOSTS env var
+// (comma separated) if the subdomain ever moves.
+const ADMIN_HOSTS = new Set(
+  (process.env.ADMIN_HOSTS || 'admin.bareaya.in,localhost,127.0.0.1')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean)
+);
+
+const isAdminHost = (req) => {
+  const host = (req.headers.host || '').split(':')[0].toLowerCase();
+  return ADMIN_HOSTS.has(host);
+};
+
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-  const BUILD_DIR = path.join(__dirname, '../frontend/build');
+  const CUSTOMER_BUILD = path.join(__dirname, '../frontend/build');
+  // Admin-only bundle produced by `npm run build:both`. Until that step is
+  // wired up the admin host falls back to the customer bundle — the /admin
+  // gate below still keeps the public host locked either way.
+  const ADMIN_BUILD = path.join(__dirname, '../frontend/build-admin');
+  const buildDirFor = (req) =>
+    isAdminHost(req) && fs.existsSync(ADMIN_BUILD) ? ADMIN_BUILD : CUSTOMER_BUILD;
+
+  // The admin panel may only be loaded from the dedicated admin subdomain;
+  // on any other host every /admin path hard-404s before touching the SPA.
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/admin') && !isAdminHost(req)) {
+      return res
+        .status(404)
+        .type('html')
+        .send('<!doctype html><html><head><title>404</title></head><body><h1>404 Not Found</h1></body></html>');
+    }
+    // Typing the bare admin subdomain lands straight on the admin app.
+    if (isAdminHost(req) && req.path === '/') {
+      return res.redirect('/admin');
+    }
+    next();
+  });
 
   // Content-hashed files under /static can be cached forever — a new deploy
   // changes the hash, so a stale cache entry can never be served.
-  app.use(
-    '/static',
-    express.static(path.join(BUILD_DIR, 'static'), {
+  app.use('/static', (req, res, next) => {
+    express.static(path.join(buildDirFor(req), 'static'), {
       maxAge: '1y',
       immutable: true,
-    })
-  );
+    })(req, res, next);
+  });
 
   // Everything else in the build (index.html, manifest, robots, icons) must
   // always be revalidated so a new deploy is picked up immediately.
-  app.use(
-    express.static(BUILD_DIR, {
+  app.use((req, res, next) => {
+    express.static(buildDirFor(req), {
       maxAge: '1h',
       etag: true,
       lastModified: true,
-      setHeaders: (res, filePath) => {
+      setHeaders: (res2, filePath) => {
         if (path.basename(filePath) === 'index.html') {
-          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+          res2.setHeader('Cache-Control', 'no-cache, must-revalidate');
         }
       },
-    })
-  );
+    })(req, res, next);
+  });
 
   app.use((req, res) => {
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ message: 'API route not found' });
     }
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-    res.sendFile(path.resolve(BUILD_DIR, 'index.html'));
+    res.sendFile(path.resolve(buildDirFor(req), 'index.html'));
   });
 } else {
   app.get('/', (req, res) => {
