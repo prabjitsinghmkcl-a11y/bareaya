@@ -8,7 +8,9 @@ import '../styles/admin.css';
 // 30s sits far below the authenticated limiter (600 req / 15 min) and is quick
 // enough that a placed order pops up while the admin is watching.
 const POLL_MS = 30000;
-const TOAST_LIFE_MS = 9000;
+// The alert auto-hides after 3 seconds — enough to read the one-line
+// summary, brief enough to never linger over the console.
+const TOAST_LIFE_MS = 3000;
 
 // Live "New order received" notifications — the admin-side mirror of the
 // customer's order-placed celebration. Seeded silently on first load so the
