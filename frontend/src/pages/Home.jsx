@@ -123,12 +123,6 @@ const productFilters = ['All', 'Hydration', 'Clarity', 'Protection'];
 
 const ingredients = [
   {
-    name: 'Niacinamide',
-    benefit: 'Refines Pores & Texture',
-    hints: ['niacinamide'],
-    image: 'https://res.cloudinary.com/aao6ldeb/image/upload/v1790754083/bareaya/ingredients/niacinamide.jpg',
-  },
-  {
     name: 'Vitamin C',
     benefit: 'Brightens & Evens Tone',
     hints: ['vitamin c', 'ascorbic'],
@@ -139,24 +133,6 @@ const ingredients = [
     benefit: 'Deep Nourishment',
     hints: ['vitamin e', 'tocopherol'],
     image: 'https://res.cloudinary.com/aao6ldeb/image/upload/v1790754086/bareaya/ingredients/vitamin-e.jpg',
-  },
-  {
-    name: 'Peptides',
-    benefit: 'Firmness & Elasticity',
-    hints: ['peptide'],
-    image: 'https://res.cloudinary.com/aao6ldeb/image/upload/v1790754086/bareaya/ingredients/peptides.jpg',
-  },
-  {
-    name: 'Kojic Acid',
-    benefit: 'Fades Dark Spots',
-    hints: ['kojic'],
-    image: 'https://res.cloudinary.com/aao6ldeb/image/upload/v1790754088/bareaya/ingredients/kojic-acid.jpg',
-  },
-  {
-    name: 'Tranexamic Acid',
-    benefit: 'Calms Pigmentation',
-    hints: ['tranexamic'],
-    image: 'https://res.cloudinary.com/aao6ldeb/image/upload/v1790754090/bareaya/ingredients/tranexamic-acid.jpg',
   },
   {
     name: 'Liquorice Oil',
