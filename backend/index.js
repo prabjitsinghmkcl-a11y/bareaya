@@ -162,12 +162,14 @@ app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 
 // Hosts from which the admin panel may be loaded. Everything else — the
-// public bareaya.in domain, www, the raw onrender.com origin — gets a hard
-// 404 on every /admin path, so scanners, link previews and curious visitors
-// never even reach a login screen. Override with the ADMIN_HOSTS env var
-// (comma separated) if the subdomain ever moves.
+// public bareaya.in domain, www — gets a hard 404 on every /admin path, so
+// scanners, link previews and curious visitors never even reach a login
+// screen. The Render-generated origin is included as the working admin URL
+// (and as a fallback) until admin.bareaya.in is set up; override the list
+// via the ADMIN_HOSTS env var (comma separated) if the subdomain moves.
 const ADMIN_HOSTS = new Set(
-  (process.env.ADMIN_HOSTS || 'admin.bareaya.in,localhost,127.0.0.1')
+  (process.env.ADMIN_HOSTS ||
+    'admin.bareaya.in,bareaya-qjzm.onrender.com,localhost,127.0.0.1')
     .split(',')
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean)
