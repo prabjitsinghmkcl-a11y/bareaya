@@ -144,6 +144,16 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', require('./routes/authRoutes'));
+
+// Lightweight liveness probe — no auth, no database, constant response.
+// An external cron (see .github/workflows/keep-alive.yml) hits this every
+// ~14 minutes so the Render free instance never spins down; without it the
+// first visitor of the day would wait through a cold start while the app
+// boots. Render can also use it as a fast health signal.
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: Math.round(process.uptime()) });
+});
+
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
