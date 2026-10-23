@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import MetaPixel from './components/MetaPixel';
 import Home from './pages/Home';
 import CartDrawer from './components/CartDrawer';
 import Preloader from './components/Preloader';
@@ -68,6 +69,7 @@ const AdminApp = () => (
 const CustomerApp = () => (
   <>
     <ScrollToTop />
+    <MetaPixel />
     <Preloader />
     <BackToTop />
     <PageReveal />

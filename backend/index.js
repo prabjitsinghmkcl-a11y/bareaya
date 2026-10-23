@@ -91,14 +91,16 @@ if (process.env.NODE_ENV === 'production') {
       useDefaults: false,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "https://checkout.razorpay.com", "https://*.razorpay.com"],
+        scriptSrc: ["'self'", "https://checkout.razorpay.com", "https://*.razorpay.com", "https://connect.facebook.net"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://theskinstory.in", "https://e-fillers.com", "https://*.gstatic.com", "https://encrypted-tbn0.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://theskinstory.in", "https://e-fillers.com", "https://*.gstatic.com", "https://encrypted-tbn0.gstatic.com", "https://www.facebook.com"],
         // Without this the hero <video> falls back to defaultSrc 'self' and the
         // Cloudinary clip is blocked, leaving only the poster frame.
         mediaSrc: ["'self'", "https://res.cloudinary.com"],
         fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-        connectSrc: ["'self'", "https://*.razorpay.com"],
+        // Meta pixel: fbevents.js loads from connect.facebook.net and reports
+        // PageView hits to www.facebook.com.
+        connectSrc: ["'self'", "https://*.razorpay.com", "https://www.facebook.com", "https://connect.facebook.net"],
         frameSrc: ["https://checkout.razorpay.com", "https://api.razorpay.com"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
