@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/Authcontext';
 import {
   LayoutDashboard,
@@ -10,7 +10,9 @@ import {
   LogOut,
   Menu,
   X,
-  Leaf
+  Leaf,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import AdminOrderToasts from './AdminOrderToasts';
 import '../styles/admin-dashboard.css';
@@ -37,18 +39,29 @@ const AdminLayout = () => {
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  const initial = (user.name || 'Admin').charAt(0).toUpperCase();
+
   return (
     <div className="adl">
-      <div className={`adl-overlay ${sidebarOpen ? 'adl-overlay--open' : ''}`} onClick={closeSidebar} aria-hidden="true" />
+      <div
+        className={`adl-overlay ${sidebarOpen ? 'adl-overlay--open' : ''}`}
+        onClick={closeSidebar}
+        aria-hidden="true"
+      />
 
+      {/* Sidebar */}
       <aside className={`adl-sidebar ${sidebarOpen ? 'adl-sidebar--open' : ''}`}>
         <div className="adl-brand">
-          <span className="adl-brand-mark"><Leaf size={20} /></span>
+          <span className="adl-brand-mark">
+            <Leaf size={20} />
+          </span>
           <div className="adl-brand-text">
             <strong>Bareaya</strong>
             <span>Admin Console</span>
           </div>
-          <button className="adl-close" onClick={closeSidebar} aria-label="Close menu"><X size={20} /></button>
+          <button className="adl-close" onClick={closeSidebar} aria-label="Close menu">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="adl-nav">
@@ -70,23 +83,41 @@ const AdminLayout = () => {
         </nav>
 
         <div className="adl-sidebar-footer">
+          <Link to="/" target="_blank" rel="noreferrer" className="adl-store-link" title="Open storefront in new tab">
+            <Globe size={16} />
+            <span>View Live Store</span>
+            <ExternalLink size={13} style={{ marginLeft: 'auto', opacity: 0.7 }} />
+          </Link>
           <button className="adl-logout" onClick={handleLogout}>
-            <LogOut size={18} />
-            <span>Logout</span>
+            <LogOut size={17} />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
 
+      {/* Main Surface */}
       <div className="adl-main">
         <header className="adl-topbar">
           <button className="adl-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
-            <Menu size={22} />
+            <Menu size={20} />
           </button>
-          <div className="adl-topbar-user">
-            <span className="adl-avatar">{(user.name || 'A').charAt(0).toUpperCase()}</span>
-            <div className="adl-topbar-meta">
-              <strong>{user.name}</strong>
-              <span>{user.email || 'Administrator'}</span>
+
+          <div className="adl-topbar-breadcrumbs">
+            <span className="adl-badge-environment">Store Management</span>
+          </div>
+
+          <div className="adl-topbar-actions">
+            <Link to="/" target="_blank" rel="noreferrer" className="adl-topbar-store-btn" title="View customer storefront">
+              <Globe size={15} />
+              <span>Visit Store</span>
+            </Link>
+
+            <div className="adl-topbar-user">
+              <span className="adl-avatar">{initial}</span>
+              <div className="adl-topbar-meta">
+                <strong>{user.name}</strong>
+                <span>{user.email || 'Administrator'}</span>
+              </div>
             </div>
           </div>
         </header>
@@ -96,7 +127,7 @@ const AdminLayout = () => {
         </main>
       </div>
 
-      {/* Live "new order received" popups over every admin screen. */}
+      {/* Live "new order received" notifications */}
       <AdminOrderToasts />
     </div>
   );
