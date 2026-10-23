@@ -6,7 +6,6 @@ import {
   IndianRupee,
   Package,
   Users,
-  TrendingUp,
   PlusCircle,
   AlertTriangle,
   ArrowRight
@@ -59,8 +58,6 @@ const AdminDashboard = () => {
 
   const recentOrders = stats?.recentOrders || [];
   const lowStock = stats?.lowStockProducts || [];
-  const monthly = stats?.monthlyRevenue || [];
-  const maxMonthly = Math.max(1, ...monthly.map((m) => m.total));
   const statusCounts = stats?.orderStatusCounts || {};
   const statusTotal = (statusCounts.pending || 0) + (statusCounts.paid || 0) + (statusCounts.shipped || 0) + (statusCounts.delivered || 0) + (statusCounts.cancelled || 0);
 
@@ -95,30 +92,7 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          <div className="adl-grid">
-            <section className="adl-panel adl-panel--grow">
-              <div className="adl-panel-head">
-                <div>
-                  <h2>Revenue</h2>
-                  <p>Last 6 months</p>
-                </div>
-                <TrendingUp size={20} />
-              </div>
-              <div className="adl-chart">
-                {monthly.map((m) => {
-                  const height = Math.max(4, (m.total / maxMonthly) * 100);
-                  return (
-                    <div key={m.label} className="adl-chart-col">
-                      <div className="adl-chart-track">
-                        <div className="adl-chart-bar" style={{ height: `${height}%` }} title={fmtMoney(m.total)} />
-                      </div>
-                      <span className="adl-chart-label">{m.label}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
+          <div className="adl-grid adl-grid--single">
             <section className="adl-panel">
               <div className="adl-panel-head">
                 <div>

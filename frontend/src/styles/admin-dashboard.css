@@ -480,6 +480,10 @@
   margin-bottom: 22px;
 }
 
+.adl-grid--single {
+  grid-template-columns: 1fr;
+}
+
 .adl-panel {
   background: var(--adm-card-bg);
   border: 1px solid var(--adm-border);
@@ -529,51 +533,6 @@
   font-size: 0.9rem;
   padding: 30px 0;
   text-align: center;
-}
-
-/* Monthly Revenue Chart */
-.adl-chart {
-  align-items: flex-end;
-  display: flex;
-  gap: 16px;
-  height: 190px;
-  padding-top: 14px;
-}
-
-.adl-chart-col {
-  align-items: center;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 8px;
-  height: 100%;
-}
-
-.adl-chart-track {
-  align-items: flex-end;
-  background: #f4efe4;
-  border-radius: 6px;
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  width: 100%;
-}
-
-.adl-chart-bar {
-  background: linear-gradient(180deg, var(--adm-olive) 0%, #4a5d3e 100%);
-  border-radius: 6px 6px 0 0;
-  transition: height 300ms ease;
-  width: 100%;
-}
-
-.adl-chart-bar:hover {
-  background: linear-gradient(180deg, var(--adm-brown) 0%, #ab7953 100%);
-}
-
-.adl-chart-label {
-  color: var(--adm-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
 }
 
 /* Status Distribution Bars */
