@@ -2,21 +2,28 @@
 #
 # Render spins a free service down after 15 minutes without traffic, so the
 # next visitor would otherwise sit through a ~50s cold start behind Render's
-# branded page. GitHub's scheduler can occasionally run a job late (sometimes
-# badly), so a single ping per run is not enough insurance: each hourly job
-# instead pings every ~7 minutes for the whole hour. As long as a run starts
-# within ~50 minutes of its slot, coverage never breaks — and even a delayed
-# neighbour run is picked up because cancel-in-progress kills the stale one.
+# branded page.
+#
+# GitHub's scheduler is best-effort: an hourly cron was observed running only
+# every 2-5 hours, which is far outside the 15-minute sleep window. Instead we
+# schedule the shortest interval GitHub allows (5 minutes) and ping once per
+# run. Runs that overlap are cancelled, so a delayed backlog can never keep the
+# newest ping from firing. Even when the scheduler is throttled, the gaps stay
+# well under 15 minutes in practice.
 #
 # The cache-busting query string guarantees the request reaches the origin
 # even if Cloudflare ever caches the path; --fail turns a non-200 into a
 # red run so failures are visible in the Actions tab; workflow_dispatch
 # allows a manual run after setup.
+#
+# NOTE: GitHub schedules remain best-effort. For a guaranteed 24/7 warm
+# instance use a dedicated pinger (UptimeRobot free, 5-minute checks) or move
+# the service to a paid Render plan.
 name: Keep Render awake
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 concurrency:
@@ -26,16 +33,12 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 5
     steps:
-      - name: Ping every 7 minutes for an hour
+      - name: Ping the health endpoint
         run: |
-          for i in $(seq 1 9); do
-            echo "ping $i at $(date -u +%H:%M:%S)Z"
-            curl -sS --fail --retry 3 --retry-delay 5 --max-time 30 \
-              -A "Mozilla/5.0 (compatible; BareayaKeepAlive)" \
-              -o /dev/null -w '%{http_code}\n' \
-              "https://bareaya.in/api/health?cb=$(date +%s)" \
-              || { echo "ping $i FAILED"; exit 1; }
-            sleep 390
-          done
+          echo "ping at $(date -u +%H:%M:%S)Z"
+          curl -sS --fail --retry 3 --retry-delay 5 --max-time 40 \
+            -A "Mozilla/5.0 (compatible; BareayaKeepAlive)" \
+            -o /dev/null -w '%{http_code}\n' \
+            "https://bareaya.in/api/health?cb=$(date +%s)"
