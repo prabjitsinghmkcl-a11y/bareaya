@@ -113,6 +113,19 @@ const contactCreate = {
   message: { type: 'string', required: true, minLength: 5, maxLength: 2000 },
 };
 
+// Full replacement of the public contact details. Every field is required so a
+// partially filled form cannot blank out the footer/contact page.
+const siteSettingsUpdate = {
+  addressLine1:    { type: 'string', required: true, minLength: 1, maxLength: 200 },
+  addressLine2:    { type: 'string', required: true, minLength: 1, maxLength: 200 },
+  phone:           { type: 'string', required: true, minLength: 6, maxLength: 30, pattern: /^\+?[0-9][0-9\s-]*$/ },
+  email:           { type: 'email',  required: true, maxLength: 120 },
+  weekdayHours:    { type: 'string', required: true, minLength: 1, maxLength: 120 },
+  weekendHours:    { type: 'string', required: true, minLength: 1, maxLength: 120 },
+  instagramHandle: { type: 'string', required: true, minLength: 1, maxLength: 60 },
+  instagramUrl:    { type: 'string', required: true, maxLength: 300, pattern: /^https?:\/\/[^\s]+$/i },
+};
+
 module.exports = {
   authSendOtp,
   authVerifyOtp,
@@ -126,4 +139,5 @@ module.exports = {
   paymentOrder,
   paymentVerify,
   contactCreate,
+  siteSettingsUpdate,
 };

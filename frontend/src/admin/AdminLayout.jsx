@@ -12,7 +12,8 @@ import {
   X,
   Leaf,
   Globe,
-  ExternalLink
+  ExternalLink,
+  Settings
 } from 'lucide-react';
 import AdminOrderToasts from './AdminOrderToasts';
 import '../styles/admin-dashboard.css';
@@ -22,7 +23,8 @@ const NAV_ITEMS = [
   { to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
   { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/add-product', label: 'Add Product', icon: PlusCircle },
-  { to: '/admin/users', label: 'Customers', icon: Users }
+  { to: '/admin/users', label: 'Customers', icon: Users },
+  { to: '/admin/settings', label: 'Site Settings', icon: Settings }
 ];
 
 const AdminLayout = () => {

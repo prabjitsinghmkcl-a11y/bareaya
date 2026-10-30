@@ -15,6 +15,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { optimised } from "../utils/cloudinary";
+import { useSiteSettings } from "../context/SiteSettingsContext";
 import "../styles/about.css";
 
 const InstagramIcon = ({ size = 20, ...props }) => (
@@ -90,6 +91,7 @@ const footerHighlights = [
 ];
 
 export default function AboutPage() {
+  const { settings } = useSiteSettings();
   return (
     <div className="about-page">
       <style>{FONT_IMPORT}</style>
@@ -282,7 +284,7 @@ export default function AboutPage() {
         <div className="about-gallery-header" data-reveal>
           <div className="about-instagram-badge">
             <InstagramIcon size={18} />
-            <span>@bareaya.skin</span>
+            <span>{settings.instagramHandle}</span>
           </div>
           <h2 className="about-gallery-title">Moments &amp; Rituals</h2>
           <p className="about-gallery-sub">
@@ -294,7 +296,7 @@ export default function AboutPage() {
           {galleryImages.map((src, i) => (
             <a
               key={i}
-              href="https://instagram.com/bareaya.skin"
+              href={settings.instagramUrl}
               target="_blank"
               rel="noreferrer"
               className="about-gallery-item"

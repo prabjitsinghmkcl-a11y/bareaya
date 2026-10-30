@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MessageCircleQuestion, PackageSearch, RotateCcw, Truck } from 'lucide-react';
+import { toTelHref, useSiteSettings } from '../context/SiteSettingsContext';
 import '../styles/contact.css';
 
 const infoChips = [
@@ -11,6 +12,7 @@ const infoChips = [
 ];
 
 const Contact = () => {
+  const { settings } = useSiteSettings();
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,20 +91,20 @@ const Contact = () => {
           <div className="contact-details" data-reveal style={{ '--reveal-delay': '280ms' }}>
             <div>
               <h2>Find Us</h2>
-              <p>B-46/1 Nariana Industrial Area Phase-2,<br />New Delhi-110028, India</p>
+              <p>{settings.addressLine1}<br />{settings.addressLine2}</p>
             </div>
             <div>
               <h2>Support</h2>
-              <a href="tel:+919266145378">Call: +91 92661 45378</a>
-              <a href="mailto:care@bareya.in">Email: care@bareya.in</a>
+              <a href={toTelHref(settings.phone)}>Call: {settings.phone}</a>
+              <a href={`mailto:${settings.email}`}>Email: {settings.email}</a>
             </div>
             <div>
               <h2>Working hours</h2>
-              <p>Mon – Fri: 10:00 – 06:30<br />Sat &amp; Sun: 09:30 – 21:30</p>
+              <p>{settings.weekdayHours}<br />{settings.weekendHours}</p>
             </div>
             <div>
               <h2>Instagram</h2>
-              <a href="https://instagram.com/bareaya.skin" target="_blank" rel="noreferrer">@bareaya.skin</a>
+              <a href={settings.instagramUrl} target="_blank" rel="noreferrer">{settings.instagramHandle}</a>
             </div>
           </div>
 

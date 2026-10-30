@@ -162,6 +162,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/settings', require('./routes/siteSettingsRoutes'));
 
 // Hosts from which the admin panel may be loaded. Everything else — the
 // public bareaya.in domain, www — gets a hard 404 on every /admin path, so

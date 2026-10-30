@@ -1,8 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { toTelHref, useSiteSettings } from "../context/SiteSettingsContext";
 import "../styles/footer.css";
 
 const Footer = () => {
+    const { settings } = useSiteSettings();
+
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
@@ -32,15 +35,15 @@ const Footer = () => {
                 <div className="footer-section">
                     <h4>Customer Support</h4>
                     <div className="support-details">
-                        <p><strong>Call:</strong> <a href="tel:+919266145378">+91 92661 45378</a></p>
-                        <p><strong>Email:</strong> <a href="mailto:care@bareaya.in">care@bareaya.in</a></p>
+                        <p><strong>Call:</strong> <a href={toTelHref(settings.phone)}>{settings.phone}</a></p>
+                        <p><strong>Email:</strong> <a href={`mailto:${settings.email}`}>{settings.email}</a></p>
                     </div>
                 </div>
                 <div className="footer-section">
                     <h4>Contact Us</h4>
                     <p>
                         <strong>Head Office:</strong><br />
-                        B-46/1, Nariana Industrial Area, Phase 2, New Delhi, Delhi 110028
+                        {settings.addressLine1} {settings.addressLine2}
                     </p>
                 </div>
             </div>

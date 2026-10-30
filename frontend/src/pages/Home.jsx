@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { optimised, HERO_VIDEO, HERO_POSTER } from '../utils/cloudinary';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 import '../styles/home.css';
 
 const heroSlides = [
@@ -172,6 +173,7 @@ const findIngredientProduct = (ingredient, list) => {
 };
 
 const Home = () => {
+  const { settings } = useSiteSettings();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -770,12 +772,12 @@ const Home = () => {
       <section className="home-gallery home-section">
         <div className="home-section-heading">
           <div data-reveal>
-            <p className="home-eyebrow">@bareaya.skin</p>
+            <p className="home-eyebrow">{settings.instagramHandle}</p>
             <h2>Follow along on Instagram</h2>
           </div>
           <a
             className="home-text-link"
-            href="https://instagram.com/bareaya.skin"
+            href={settings.instagramUrl}
             target="_blank"
             rel="noreferrer"
             data-reveal
@@ -787,7 +789,7 @@ const Home = () => {
         <div className="home-gallery-grid">
           {galleryImages.map((image, index) => (
             <a
-              href="https://instagram.com/bareaya.skin"
+              href={settings.instagramUrl}
               target="_blank"
               rel="noreferrer"
               key={image}

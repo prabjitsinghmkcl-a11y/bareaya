@@ -969,6 +969,100 @@
   width: 130px;
 }
 
+/* ============ Site Settings ============ */
+.admin-settings-intro {
+  color: var(--adm-muted);
+  font-size: 0.9rem;
+  margin: -8px 0 20px;
+  max-width: 700px;
+}
+
+.admin-settings-form {
+  gap: 0;
+  max-width: 860px;
+  padding: 8px 30px 26px;
+}
+
+.admin-settings-section {
+  border-bottom: 1px solid var(--adm-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+.admin-settings-heading {
+  align-items: flex-start;
+  color: var(--adm-brown);
+  display: flex;
+  gap: 12px;
+}
+
+.admin-settings-heading h3 {
+  color: var(--adm-ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin: 0 0 3px;
+}
+
+.admin-settings-heading p {
+  color: var(--adm-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.admin-settings-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-settings-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 22px;
+}
+
+.admin-settings-actions .admin-btn {
+  align-items: center;
+  display: inline-flex;
+  gap: 7px;
+  text-decoration: none;
+}
+
+.admin-alert--success {
+  align-items: center;
+  background: #ecfdf3;
+  border: 1px solid #d1fae5;
+  color: #047857;
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 680px) {
+  .admin-settings-form {
+    padding: 4px 18px 22px;
+  }
+
+  .admin-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-settings-actions {
+    justify-content: stretch;
+  }
+
+  .admin-settings-actions .admin-btn {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 /* ============ States & Overlays ============ */
 .admin-loading-card {
   align-items: center;

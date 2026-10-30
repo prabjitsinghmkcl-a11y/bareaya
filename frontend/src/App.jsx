@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import Preloader from './components/Preloader';
 import BackToTop from './components/BackToTop';
 import PageReveal from './components/PageReveal';
+import { SiteSettingsProvider } from './context/SiteSettingsContext';
 
 // Home stays eager on purpose — it is the entry route and owns the LCP image,
 // so lazy-loading it would just add a request waterfall before anything paints.
@@ -33,6 +34,7 @@ const AdminProducts = lazy(() => import('./admin/AdminProducts'));
 const EditProduct = lazy(() => import('./admin/EditProduct'));
 const AdminOrders = lazy(() => import('./admin/AdminOrders'));
 const AdminUsers = lazy(() => import('./admin/AdminUser'));
+const AdminSettings = lazy(() => import('./admin/AdminSettings'));
 
 const isAdminBuild = process.env.REACT_APP_ADMIN_ONLY === 'true';
 
@@ -59,6 +61,7 @@ const AdminApp = () => (
         <Route path="/admin/edit-product/:id" element={<EditProduct />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
       <Route path="/" element={<Navigate to="/admin" replace />} />
       <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -67,31 +70,33 @@ const AdminApp = () => (
 );
 
 const CustomerApp = () => (
-  <>
-    <ScrollToTop />
-    <MetaPixel />
-    <Preloader />
-    <BackToTop />
-    <PageReveal />
-    <Navbar />
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/product/:id" element={<ProductDetails />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/orders/:id" element={<OrderTrack />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
-    <Footer />
-    <CartDrawer />
-  </>
+  <SiteSettingsProvider>
+    <>
+      <ScrollToTop />
+      <MetaPixel />
+      <Preloader />
+      <BackToTop />
+      <PageReveal />
+      <Navbar />
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/product/:id" element={<ProductDetails />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders/:id" element={<OrderTrack />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+      <Footer />
+      <CartDrawer />
+    </>
+  </SiteSettingsProvider>
 );
 
 const AppRouter = () => {
